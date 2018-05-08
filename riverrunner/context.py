@@ -51,10 +51,13 @@ class Address(Base):
 class Measurement(Base):
     __tablename__ = 'measurement'
 
+    date_time = Column(DateTime, primary_key=True)
+
+    metric_id = Column(ForeignKey('metric.metric_id'), primary_key=True)
+    metric    = relationship('Metric')
+
     station_id = Column(ForeignKey('station.station_id'), primary_key=True)
-    date_time  = Column(DateTime, primary_key=True)
-    metric_id  = Column(ForeignKey('metric.metric_id'), primary_key=True)
-    metric     = relationship('Station')
+    station = relationship('Station')
 
     value = Column(Float)
 
@@ -112,8 +115,10 @@ class RiverRun(Base):
 
     put_in_latitude  = Column(Float, nullable=False)
     put_in_longitude = Column(Float, nullable=False)
-    put_in_address = relationship('Address', primaryjoin="and_(Address.latitude == foreign(RiverRun.latitude, "
-                                                         "Address.longitude == foreign(RiverRun.longitude))")
+    put_in_address = relationship(
+        'Address',
+        primaryjoin="and_(Address.latitude == foreign(RiverRun.put_in_latitude), "
+                    "Address.longitude == foreign(RiverRun.put_in_longitude))")
 
     distance   = Column(Float)
     river_name = Column(String(255))
@@ -121,8 +126,10 @@ class RiverRun(Base):
 
     take_out_latitude  = Column(Float, nullable=False)
     take_out_longitude = Column(Float, nullable=False)
-    take_out_address = relationship('Address', primaryjoin="and_(Address.latitude == foreign(RiverRun.latitude, "
-                                                           "Address.longitude == foreign(RiverRun.longitude))")
+    take_out_address = relationship(
+        'Address',
+        primaryjoin="and_(Address.latitude == foreign(RiverRun.take_out_latitude), "
+                    "Address.longitude == foreign(RiverRun.take_out_longitude))")
 
     def __repr__(self):
         return 'RiverRun(run_id="%s", run_name="%s")>' % (self.run_id, self.run_name)
@@ -140,8 +147,10 @@ class Station(Base):
     name   = Column(String(255))
     latitude  = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    address = relationship('Address', primaryjoin="and_(Address.latitude == foreign(Station.latitude, "
-                                                  "Address.longitude == foreign(Station.longitude))")
+    address = relationship(
+        'Address',
+        primaryjoin="and_(Address.latitude == foreign(Station.latitude), "
+                    "Address.longitude == foreign(Station.longitude))")
 
     def __repr__(self):
         return 'Station(station_id="%s", name="%s", source="%s")>' % \
