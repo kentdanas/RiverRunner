@@ -35,6 +35,28 @@ class TContext(context.Context):
             session.query(entity).delete()
         session.commit()
 
+    def generate_addresses(self, session):
+        # fill a few foreign key dependencies
+        session.add(context.State(
+            short_name='WA',
+            long_name='Washington'
+        ))
+
+        addresses = [
+            context.Address(
+                latitude=self.random_latitude(),
+                longitude=self.random_longitude(),
+                address='that street you know somewhere',
+                city='a city %s' % i,
+                county='King',
+                state='WA',
+                zip='a zip'
+            )
+            for i in range(5)
+        ]
+        session.add_all(addresses)
+        session.commit()
+
     def get_measurements_for_test(self, i, session):
         """ generate a new set of measurements for unit test
 

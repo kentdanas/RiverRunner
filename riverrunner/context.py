@@ -197,7 +197,7 @@ class StationRiverDistance(Base):
     station_id = Column(ForeignKey('station.station_id'), primary_key=True)
     station = relationship('Station')
 
-    river_id   = Column(ForeignKey('river_run.run_id'), primary_key=True)
+    run_id = Column(ForeignKey('river_run.run_id'), primary_key=True)
     put_in_distance   = Column(Float)
     take_out_distance = Column(Float)
 

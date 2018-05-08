@@ -10,27 +10,7 @@ class TestContext(TestCase):
         cls.session = cls.context.Session()
 
         cls.context.clear_dependency_data(cls.session)
-
-        # fill a few foreign key dependencies
-        cls.session.add(context.State(
-            short_name='WA',
-            long_name='Washington'
-        ))
-
-        addresses = [
-            context.Address(
-                latitude=cls.context.random_latitude(),
-                longitude=cls.context.random_longitude(),
-                address='that street you know somewhere',
-                city='a city %s' % i,
-                county='King',
-                state='WA',
-                zip='a zip'
-            )
-            for i in range(5)
-        ]
-        cls.session.add_all(addresses)
-        cls.session.commit()
+        cls.context.generate_addresses(cls.session)
 
     @classmethod
     def tearDownClass(cls):
