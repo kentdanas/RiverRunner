@@ -4,15 +4,41 @@ from unittest import TestCase
 
 
 class TestContext(TestCase):
-    def setUp(self):
-        self.context = TContext()
-        self.session = self.context.Session()
+    @classmethod
+    def setUpClass(cls):
+        cls.context = TContext()
+        cls.session = cls.context.Session()
 
-        self.context.clear_all_tables()
+        cls.context.clear_dependency_data(cls.session)
+
+        # fill a few foreign key dependencies
+        cls.session.add(context.State(
+            short_name='WA',
+            long_name='Washington'
+        ))
+
+        addresses = [
+            context.Address(
+                latitude=cls.context.random_latitude(),
+                longitude=cls.context.random_longitude(),
+                address='that street you know somewhere',
+                city='a city %s' % i,
+                county='King',
+                state='WA',
+                zip='a zip'
+            )
+            for i in range(5)
+        ]
+        cls.session.add_all(addresses)
+        cls.session.commit()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.context.clear_dependency_data(cls.session)
+        cls.session.close()
 
     def tearDown(self):
-        self.context.clear_all_tables()
-        self.session.close()
+        self.context.clear_all_tables(self.session)
 
     def test_add_prediction(self):
         # setup
@@ -24,9 +50,6 @@ class TestContext(TestCase):
         predictions = self.session.query(context.Prediction).all()
         self.assertEqual(len(predictions), 1)
 
-        # cleanup
-        self.session.query(context.Prediction).delete()
-
     def test_add_many_predictions(self):
         # setup
         predictions = self.context.get_predictions_for_test(10, self.session)
@@ -37,22 +60,20 @@ class TestContext(TestCase):
         predictions = self.session.query(context.Prediction).all()
         self.assertEqual(len(predictions), 10)
 
-        # cleanup
-        self.session.query(context.Prediction).delete()
-
     def test_remove_prediction(self):
         # setup
         predictions = self.context.get_predictions_for_test(2, self.session)
         self.session.add_all(predictions)
         self.session.commit()
 
+        self.session.query(context.Prediction).filter(
+            context.Prediction.timestamp == predictions[0].timestamp
+        ).delete()
+        self.session.commit()
+
         # assert
-        self.session.query(context.Prediction).delete(predictions[0])
         predictions = self.session.query(context.Prediction).all()
         self.assertEqual(len(predictions), 1)
-
-        # cleanup
-        self.session.query(context.Prediction).delete()
 
     def test_remove_all_predictions(self):
         # setup
@@ -75,9 +96,6 @@ class TestContext(TestCase):
         measurements = self.session.query(context.Measurement).all()
         self.assertEqual(len(measurements), 1)
 
-        # cleanup
-        self.context.clear_all_tables()
-
     def test_add_many_measurements(self):
         # setup
         measurements = self.context.get_measurements_for_test(10, self.session)
@@ -87,9 +105,6 @@ class TestContext(TestCase):
         # assert
         measurements = self.session.query(context.Measurement).all()
         self.assertEqual(len(measurements), 10)
-
-        # cleanup
-        self.context.clear_all_tables()
 
     def test_remove_measurement(self):
         # setup

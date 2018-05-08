@@ -9,19 +9,26 @@ class TContext(context.Context):
     def __init__(self):
         super().__init__(settings.DATABASE_TEST)
 
-    def clear_all_tables(self):
+    def clear_dependency_data(self, session):
+        self.clear_all_tables(session)
+
+        session.query(context.Address).delete()
+        session.query(context.State).delete()
+        session.commit()
+
+    @staticmethod
+    def clear_all_tables(session):
         """ delete all rows from all tables in test database
 
         :return: None
         """
-        session = self.Session()
         entities = [
-            context.Address,
+            context.Prediction,
+            context.StationRiverDistance,
             context.Measurement,
             context.Metric,
-            context.Prediction,
-            context.RiverRun,
-            context.Station
+            context.Station,
+            context.RiverRun
         ]
 
         for entity in entities:
@@ -36,7 +43,7 @@ class TContext(context.Context):
                         station and metric dependencies
         :return: list, containing i Measurements
         """
-        stations = self.get_stations_for_test(i)
+        stations = self.get_stations_for_test(i, session)
         session.add_all(stations)
 
         metrics = self.get_metrics_for_test(i)
@@ -82,7 +89,7 @@ class TContext(context.Context):
                add prediction dependencies
         :return: list, containing i random predictions
         """
-        runs = self.get_runs_for_test(i)
+        runs = self.get_runs_for_test(i, session)
         session.add_all(runs)
         session.commit()
 
@@ -95,9 +102,9 @@ class TContext(context.Context):
                 context.Prediction(
                     run_id=np.random.choice(runs, 1)[0].run_id,
                     timestamp=datetime.datetime.now(),
-                    fr_lb=fr - sd,
-                    fr=fr,
-                    fr_ub=fr + sd
+                    fr_lb=np.round(fr - sd, 1),
+                    fr=np.round(fr, 1),
+                    fr_ub=np.round(fr + sd, 1)
                 )
             )
 
@@ -106,43 +113,57 @@ class TContext(context.Context):
 
         return predictions
 
-    def get_runs_for_test(self, i):
+    @staticmethod
+    def get_runs_for_test(i, session):
         """ generate a random set of runs for unit test
 
         :param i: int, number of runs to generate
+        :param session: context.Session(), database session to query addresses
         :return: list, containing runs
         """
-        return [
-            context.RiverRun(
+        addresses = session.query(context.Address).all()
+        runs = []
+        for idx in range(i):
+            put_in = np.random.choice(addresses, 1)[0]
+            take_out = np.random.choice(addresses, 1)[0]
+
+            runs.append(context.RiverRun(
                 run_id=idx,
                 class_rating=np.random.choice(['I', 'II', 'IV', 'V', 'GTFO'], 1)[0],
                 min_level=int(np.random.randint(0, 100, 1)[0]),
                 max_level=int(np.random.randint(100, 1000, 1)[0]),
-                put_in_latitude=self.random_latitude(),
-                put_in_longitude=self.random_longitude(),
+                put_in_latitude=put_in.latitude,
+                put_in_longitude=put_in.longitude,
                 distance=np.round(np.random.uniform(5, 3, 1)[0], 1),
-                take_out_latitude=self.random_latitude(),
-                take_out_longitude=self.random_longitude()
-            )
-            for idx in range(i)
-        ]
+                take_out_latitude=take_out.latitude,
+                take_out_longitude=take_out.longitude
+            ))
 
-    def get_stations_for_test(self, i):
+        return runs
+
+    @staticmethod
+    def get_stations_for_test(i, session):
         """ generate a random set of stations for unit test
 
         :param i: int, number of stations to generate
+        :param session: context.Session(), database session to query addresses
         :return: list, containing i Stations
         """
-        return [
-            context.Station(
+        addresses = session.query(context.Address).all()
+
+        stations = []
+        for sid in range(i):
+            address = np.random.choice(addresses, 1)[0]
+
+            stations.append(context.Station(
                 station_id=str(int(sid)),
                 source=np.random.choice(['NOAA', 'USGS'], 1)[0],
                 name='station %s' % sid,
-                latitude=self.random_latitude(),
-                longitude=self.random_longitude()
-            )
-            for sid in range(i)
-        ]
+                latitude=address.latitude,
+                longitude=address.longitude
+            ))
+
+        return stations
 
     @staticmethod
     def random_latitude():
@@ -150,7 +171,7 @@ class TContext(context.Context):
 
         :return: float, a random latitude
         """
-        return np.round(np.random.uniform(-90, 90, 1), 3)[0]
+        return np.round(np.random.uniform(46, 49, 1), 3)[0]
 
     @staticmethod
     def random_longitude():
@@ -158,4 +179,4 @@ class TContext(context.Context):
 
         :return: float, a random longitude
         """
-        return np.round(np.random.uniform(-180, 180, 1), 3)[0]
+        return np.round(np.random.uniform(-124, -117, 1), 3)[0]

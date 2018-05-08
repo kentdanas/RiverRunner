@@ -1,10 +1,11 @@
 from riverrunner import settings
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Index, ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 Base = declarative_base()
@@ -38,8 +39,13 @@ class Address(Base):
     address = Column(String(255))
     city    = Column(String(255))
     county  = Column(String(255))
-    state   = Column(String(2))
+
+    state   = Column(ForeignKey('state.short_name'))
+    state_  = relationship('State')
+
     zip = Column(String(10))
+
+    Index('idx_latlon', 'latitude', 'longitude', unique=True)
 
     def __repr__(self):
         return '<Address(latitude="%s", longitude="%s")>' % (self.latitude, self.longitude)
@@ -107,7 +113,18 @@ class Prediction(Base):
 class RiverRun(Base):
     __tablename__ = 'river_run'
 
-    run_id = Column(Integer, primary_key=True)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ('put_in_latitude', 'put_in_longitude'),
+            ('address.latitude', 'address.longitude')
+        ),
+        ForeignKeyConstraint(
+            ('take_out_latitude', 'take_out_longitude'),
+            ('address.latitude', 'address.longitude')
+        )
+    )
+
+    run_id = Column(Integer, primary_key=True, index=True)
 
     class_rating = Column(String(31))
     max_level = Column(Integer)
@@ -138,8 +155,22 @@ class RiverRun(Base):
         return self.run_name
 
 
+class State(Base):
+    __tablename__ = 'state'
+
+    short_name = Column(String(2), primary_key=True)
+    long_name = Column(String(31))
+
+
 class Station(Base):
     __tablename__ = 'station'
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ('latitude', 'longitude'),
+            ('address.latitude', 'address.longitude')
+        ),
+    )
 
     station_id = Column(String(31), primary_key=True)
 
@@ -158,3 +189,17 @@ class Station(Base):
 
     def __str__(self):
         return self.name
+
+
+class StationRiverDistance(Base):
+    __tablename__ = 'station_river_distance'
+
+    station_id = Column(ForeignKey('station.station_id'), primary_key=True)
+    station = relationship('Station')
+
+    river_id   = Column(ForeignKey('river_run.run_id'), primary_key=True)
+    put_in_distance   = Column(Float)
+    take_out_distance = Column(Float)
+
+    Index('idx_distance', 'put_in_distance', unique=True)
+
