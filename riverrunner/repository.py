@@ -132,3 +132,12 @@ class Repository:
 
         df = pd.DataFrame([m.dict for m in measurements])
         return df
+
+    def get_all_runs(self):
+        """ retrieve all runs from the db
+
+        :return: DataFrame, containing all runs
+        """
+
+        runs = pd.DataFrame([r.dict for r in self.__session.query(RiverRun).all()])
+        return runs

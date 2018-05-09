@@ -166,6 +166,22 @@ class RiverRun(Base):
     def __str__(self):
         return self.run_name
 
+    @property
+    def dict(self):
+        return {
+            'run_id': self.run_id,
+            'class_rating': self.class_rating,
+            'max_level': self.max_level,
+            'min_level': self.min_level,
+            'put_in_latitude': self.put_in_latitude,
+            'put_in_longitude': self.put_in_longitude,
+            'distance': self.distance,
+            'river_name': self.river_name,
+            'run_name': self.run_name,
+            'take_out_latitude': self.take_out_latitude,
+            'take_out_longitude': self.take_out_longitude
+        }
+
 
 class State(Base):
     __tablename__ = 'state'

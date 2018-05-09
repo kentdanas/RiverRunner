@@ -350,3 +350,12 @@ class TestRepository(TestCase):
         measurements = self.repo.get_measurements(run_id=run.run_id)
         self.assertTrue('NOAA' in measurements.source.values)
         self.assertTrue('USGS' in measurements.source.values)
+
+    def test_get_all_runs(self):
+        # setup
+        runs = self.context.get_runs_for_test(2, self.session)
+        self.session.add_all(runs)
+
+        # assert
+        runs = self.repo.get_all_runs()
+        self.assertEqual(len(runs), 2)
