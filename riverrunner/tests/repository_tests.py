@@ -1,6 +1,6 @@
 import datetime
 from riverrunner import context
-from riverrunner.context import Address, Measurement, Metric, Prediction, RiverRun, Station, StationRiverDistance
+from riverrunner.context import Address, Measurement, Metric, RiverRun, Station, StationRiverDistance
 from riverrunner.repository import Repository
 from riverrunner.tests.test_context import TContext
 from unittest import TestCase
@@ -89,19 +89,18 @@ class TestRepository(TestCase):
             units='a scalar'
         )
 
-        [self.session.merge(instance) for instance in [station, run, strd, metric]]
+        self.session.add_all([station, run, strd, metric])
 
-        # ensure the intersection of measurement dates is
-        # within a specified date range
+        # ensure the intersection of measurement dates is within a specified date range
         measurements = []
         for i in range(10):
             measurements.append(Measurement(
                 station_id=station.station_id,
                 metric_id=metric.metric_id,
-                date_time=now - datetime.timedelta(days=15)
-                if i < 5 else now - datetime.timedelta(5)
+                date_time=now - datetime.timedelta(days=15, seconds=5*i)
+                if i < 5 else now - datetime.timedelta(days=5, seconds=5*i)
             ))
-        self.session.add_all(measurements)
+        [self.session.merge(m) for m in measurements]
         self.session.commit()
 
         # assert
@@ -112,8 +111,8 @@ class TestRepository(TestCase):
         )
 
         self.assertEqual(len(measurements), 5)
-        for measurement in measurements:
-            self.assertTrue(now - datetime.timedelta(16) <= measurement.date_time < now - datetime.timedelta(14))
+        for m in measurements.iterrows():
+            self.assertTrue(now - datetime.timedelta(days=16) <= m[1].date_time < now - datetime.timedelta(days=14))
 
     def test_get_measurements_throws_if_start_is_later_than_end(self):
         # setup
@@ -151,7 +150,8 @@ class TestRepository(TestCase):
         station = Station(
             station_id='1',
             latitude=address.latitude,
-            longitude=address.longitude
+            longitude=address.longitude,
+            source=self.context.weather_sources[0]
         )
 
         run = RiverRun(
@@ -186,20 +186,167 @@ class TestRepository(TestCase):
 
         measurements = []
         for i in range(10):
-            measurements.append(Measurement(
-                station_id=station.station_id,
-                metric_id=metric.metric_id,
-                date_time=now - datetime.timedelta(days=45)
-                if i < 5 else now - datetime.timedelta(days=5)
+            measurements.append(
+                Measurement(
+                    station_id=station.station_id,
+                    metric_id=metric.metric_id,
+                    date_time=now - datetime.timedelta(days=45, seconds=5*i)
+                    if i < 5 else now - datetime.timedelta(days=5, seconds=5*i)
             ))
-        self.session.add_all(measurements)
+
+        [self.session.merge(m) for m in measurements]
         self.session.commit()
 
         # assert
-        measurements = self.repo.get_measurements(
-            run_id=run.run_id
-        )
+        measurements = self.repo.get_measurements(run_id=run.run_id)
 
         self.assertEqual(len(measurements), 5)
-        for measurement in measurements:
-            self.assertTrue(measurement.date_time >= now - datetime.timedelta(30))
+        for m in measurements.iterrows():
+            self.assertTrue(m[1].date_time >= now - datetime.timedelta(30))
+
+    def test_get_measurements_returns_from_more_than_one_station(self):
+        # setup
+        now = datetime.datetime.now()
+
+        addresses = self.session.query(Address).limit(2)
+        stations = [
+            Station(
+                station_id='1',
+                latitude=addresses[0].latitude,
+                longitude=addresses[0].longitude,
+                source=self.context.weather_sources[0]
+            ),
+            Station(
+                station_id='2',
+                latitude=addresses[1].latitude,
+                longitude=addresses[1].longitude,
+                source=self.context.weather_sources[1]
+            )
+        ]
+
+        run = RiverRun(
+            run_id=1,
+            put_in_latitude=addresses[0].latitude,
+            put_in_longitude=addresses[0].longitude,
+            class_rating='I',
+            max_level=100,
+            min_level=10,
+            take_out_latitude=addresses[1].latitude,
+            take_out_longitude=addresses[1].longitude,
+            distance=10,
+            river_name='a river',
+            run_name='a run'
+        )
+
+        strds = [
+            StationRiverDistance(
+                station_id=s.station_id,
+                run_id=run.run_id,
+                put_in_distance=1.,
+                take_out_distance=1.
+            )
+            for s in stations
+        ]
+
+        metric = Metric(
+            description='a description',
+            metric_id=1,
+            name='a name',
+            units='a scalar'
+        )
+
+        self.session.add_all(stations)
+        self.session.add(run)
+        self.session.add_all(strds)
+        self.session.add(metric)
+
+        measurements = []
+        for i in range(10):
+            measurements.append(
+                Measurement(
+                    station_id=stations[i % 2].station_id,
+                    metric_id=metric.metric_id,
+                    date_time=now - datetime.timedelta(days=15, seconds=5*i)
+                )
+            )
+
+        [self.session.merge(m) for m in measurements]
+        self.session.commit()
+
+        # assert
+        measurements = self.repo.get_measurements(run_id=run.run_id, min_distance=100.)
+        self.assertEqual(len(measurements), 10)
+
+    def test_get_measurements_returns_both_NOAA_and_USGS(self):
+        # setup
+        now = datetime.datetime.now()
+
+        addresses = self.session.query(Address).limit(2)
+        stations = [
+            Station(
+                station_id='1',
+                latitude=addresses[0].latitude,
+                longitude=addresses[0].longitude,
+                source=self.context.weather_sources[0]
+            ),
+            Station(
+                station_id='2',
+                latitude=addresses[1].latitude,
+                longitude=addresses[1].longitude,
+                source=self.context.weather_sources[1]
+            )
+        ]
+
+        run = RiverRun(
+            run_id=1,
+            put_in_latitude=addresses[0].latitude,
+            put_in_longitude=addresses[0].longitude,
+            class_rating='I',
+            max_level=100,
+            min_level=10,
+            take_out_latitude=addresses[1].latitude,
+            take_out_longitude=addresses[1].longitude,
+            distance=10,
+            river_name='a river',
+            run_name='a run'
+        )
+
+        strds = [
+            StationRiverDistance(
+                station_id=s.station_id,
+                run_id=run.run_id,
+                put_in_distance=1.,
+                take_out_distance=1.
+            )
+            for s in stations
+        ]
+
+        metric = Metric(
+            description='a description',
+            metric_id=1,
+            name='a name',
+            units='a scalar'
+        )
+
+        self.session.add_all(stations)
+        self.session.add(run)
+        self.session.add_all(strds)
+        self.session.add(metric)
+
+        measurements = []
+        for i in range(10):
+            measurements.append(
+                Measurement(
+                    station_id=stations[i % 2].station_id,
+                    metric_id=metric.metric_id,
+                    date_time=now - datetime.timedelta(days=15, seconds=5 * i)
+                )
+            )
+
+        [self.session.merge(m) for m in measurements]
+        self.session.commit()
+
+        # assert
+        measurements = self.repo.get_measurements(run_id=run.run_id)
+        self.assertTrue('NOAA' in measurements.source.values)
+        self.assertTrue('USGS' in measurements.source.values)

@@ -8,6 +8,7 @@ import time
 class TContext(context.Context):
     def __init__(self):
         super().__init__(settings.DATABASE_TEST)
+        self.weather_sources = ['NOAA', 'USGS']
 
     def clear_dependency_data(self, session):
         self.clear_all_tables(session)

@@ -7,7 +7,6 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
-
 Base = declarative_base()
 
 
@@ -67,6 +66,9 @@ class Measurement(Base):
 
     value = Column(Float)
 
+    Index('idx_station', 'station_id')
+    Index('idx_date_time', 'date_time', unique=True)
+
     def __repr__(self):
         return '<Measurement(station_id="%s", datetime="%s", metric="%s")>' % \
                (self.station_id, self.date_time, self.metric.name)
@@ -74,6 +76,16 @@ class Measurement(Base):
     def __str__(self):
         return 'station: %s, datetime: %s, metric: %s' % \
                (self.station_id, self.date_time, self.metric.name)
+
+    @property
+    def dict(self):
+        return {
+            'date_time': self.date_time,
+            'metric_id': self.metric_id,
+            'station_id': self.station_id,
+            'source': self.station.source,
+            'value': self.value
+        }
 
 
 class Metric(Base):
@@ -203,3 +215,6 @@ class StationRiverDistance(Base):
 
     Index('idx_distance', 'put_in_distance', unique=True)
 
+    @hybrid_property
+    def source(self):
+        return self.station.source
