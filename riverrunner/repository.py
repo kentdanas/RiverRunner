@@ -100,14 +100,13 @@ class Repository:
                                         StationRiverDistance.put_in_distance,
                                         Station.source)\
             .join(Station, (Station.station_id == StationRiverDistance.station_id))\
-            .filter(StationRiverDistance.run_id == run_id)\
+            .filter(StationRiverDistance.river_id == run_id)\
             .order_by(StationRiverDistance.put_in_distance)\
             .all()
-        station_ids = [s[0] for s in stations]
 
         # make sure both a NOAA and USGS weather station are retrieved
-        tmp = []
         if min_distance <= 0.:
+            tmp = []
             noaa, usgs = False, False
             for station in stations:
                 if 'NOAA' == station[2]:
@@ -119,13 +118,16 @@ class Repository:
 
                 if noaa and usgs:
                     break
+
+            stations = tmp
         else:
             stations = [s for s in stations if s[1] < min_distance]
-            station_ids = [s[0] for s in stations]
+
+        station_ids = [s[0] for s in stations]
 
         # make the query
         measurements = self.__session.query(Measurement)\
-            .filter(Station.station_id.in_(station_ids),
+            .filter(Measurement.station_id.in_(station_ids),
                     Measurement.date_time >= start_date,
                     Measurement.date_time < end_date)\
             .all()
