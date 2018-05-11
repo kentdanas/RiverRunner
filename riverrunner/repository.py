@@ -112,7 +112,7 @@ class Repository:
                                         StationRiverDistance.put_in_distance,
                                         Station.source)\
             .join(Station, (Station.station_id == StationRiverDistance.station_id))\
-            .filter(StationRiverDistance.run_id == run_id)\
+            .filter(StationRiverDistance.river_id == run_id)\
             .order_by(StationRiverDistance.put_in_distance)\
             .all()
 
