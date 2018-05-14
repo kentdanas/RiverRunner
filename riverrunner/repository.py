@@ -87,27 +87,32 @@ class Repository:
             end_date = datetime.datetime.now()
 
         # ensure the run_id exists if it was supplied
+        def raise_rid_error():
+            raise ValueError('run_id does not exist: %s' % run_id)
+
         if run_id > -1:
             try:
                 run = self.__session.query(RiverRun.run_id).filter(RiverRun.run_id == run_id).first()
+                if run is None:
+                    raise_rid_error()
             except Exception as e:
-                raise ValueError('run_id does not exist: %s' % [str(a) for a in e.args])
+                raise_rid_error()
         else:
-            raise ValueError('run_id does not exist: %s' % run_id)
+            raise_rid_error()
 
         # define the stations we need to reference
         stations = self.__session.query(StationRiverDistance.station_id,
                                         StationRiverDistance.put_in_distance,
                                         Station.source)\
             .join(Station, (Station.station_id == StationRiverDistance.station_id))\
-            .filter(StationRiverDistance.river_id == run_id)\
+            .filter(StationRiverDistance.run_id == run_id)\
             .order_by(StationRiverDistance.put_in_distance)\
             .all()
 
         # make sure both a NOAA and USGS weather station are retrieved
         if min_distance <= 0.:
             tmp = []
-            noaa, usgs = False, False
+            noaa, usgs, snow = False, False, False
             for station in stations:
                 if 'NOAA' == station[2]:
                     tmp.append(station)
@@ -115,8 +120,10 @@ class Repository:
                 elif 'USGS' == station[2]:
                     tmp.append(station)
                     usgs = True
-
-                if noaa and usgs:
+                elif 'SNOW' == station[2]:
+                    tmp.append(station)
+                    snow = True
+                if noaa and usgs and snow:
                     break
 
             stations = tmp
