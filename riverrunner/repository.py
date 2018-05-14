@@ -109,7 +109,7 @@ class Repository:
             .order_by(StationRiverDistance.put_in_distance)\
             .all()
 
-        # make sure both a NOAA and USGS weather station are retrieved
+        # make sure at least one of each weather source is returned
         if min_distance <= 0.:
             tmp = []
             noaa, usgs, snow = False, False, False
