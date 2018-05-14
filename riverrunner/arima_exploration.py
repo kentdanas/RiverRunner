@@ -1,11 +1,26 @@
+"""
+Module for exploring river run flow rate data and exogenous predictors to determine
+best parameters for ARIMA model.
+
+Functions:
+    daily_avg: takes time series with measurements of different timeframes and creates
+    dataframe with daily averages
+
+    test_stationarity: implements Dickey-Fuller test and rolling average plots to check
+    for stationarity of the time series
+
+    plot_autocorrs: creates plots of autocorrelation function and partial autocorrelation
+    function to help determine p and q parameters for ARIMA model
+"""
+
 import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from riverrunner.repository import Repository
 from statsmodels.tsa.arima_model import ARIMA
-from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.stattools import arma_order_select_ic
 
 repo = Repository()
@@ -30,8 +45,6 @@ def daily_avg(time_series):
     time_series_daily = time_series_daily.dropna()
     return time_series_daily
 
-test_measures_daily = daily_avg(test_measures)
-
 def test_stationarity(time_series):
     """
     Performs Dickey-Fuller test for stationarity and plots rolling mean and standard
@@ -53,7 +66,7 @@ def test_stationarity(time_series):
     plt.show();
 
     # Dickey-Fuller test
-    dftest = adfuller(time_series.iloc[:,0], autolag='AIC')
+    dftest = adfuller(time_series.iloc[:, 0], autolag='AIC')
 
     if dftest[0] < dftest[4]['5%']:
         return True
@@ -85,13 +98,29 @@ def plot_autocorrs(time_series):
     plt.title('PACF')
     plt.tight_layout()
 
+# Average data and create train/test split
+measures_daily = daily_avg(test_measures)
+train_measures_daily = measures_daily[:-10]
+test_measures_daily = measures_daily[-10:]
+
+# Ensure data is stationary
+test_stationarity(train_measures_daily)
+
 # Determine p and q parameters
-params = arma_order_select_ic(test_measures_daily, ic='aic')
+params = arma_order_select_ic(train_measures_daily, ic='aic')
 
 # Build and fit model
-mod = ARIMA(test_measures_daily, order=(params.aic_min_order[0],0,params.aic_min_order[1]))
+mod = ARIMA(train_measures_daily, order=(params.aic_min_order[0], 0, params.aic_min_order[1]))
 results = mod.fit()
-test_measures_daily['predicted'] = results.predict()
-test_measures_daily[['value', 'predicted']].plot()
+test_measures_daily['prediction'] = results.forecast(steps=10)[0]
+train_measures_daily['model'] = results.predict()
+
+# Plot results
+plt.plot(test_measures_daily[['value', 'prediction']])
+plt.plot(train_measures_daily[['value', 'model']]['2015-07':])
+plt.legend(['Test values', 'Prediction', 'Train values', 'Model'])
+
+
+
 
 
