@@ -1,4 +1,5 @@
 import datetime
+import numpy as np
 from riverrunner import context
 from riverrunner.context import Address, Measurement, Metric, RiverRun, Station, StationRiverDistance
 from riverrunner.repository import Repository
@@ -364,3 +365,121 @@ class TestRepository(TestCase):
         # assert
         runs = self.repo.get_all_runs()
         self.assertEqual(len(runs), 2)
+
+    def test_get_measurements_specific_range_1(self):
+        """unittest for specific range
+
+        test whether a given date range is returning all sources
+        and all measurements [2009-01-01, 2016, 01, 01] | run_id=500
+        """
+
+        # setup
+        addresses = self.session.query(Address).all()
+        stations = []
+        for i in range(100):
+            soid = i % len(self.context.weather_sources)
+            aid  = i % len(addresses)
+
+            stations.append(Station(
+                station_id=str(i),
+                latitude=addresses[aid].latitude,
+                longitude=addresses[aid].longitude,
+                source=self.context.weather_sources[soid]
+            ))
+
+        runs = []
+        for i in range(300, 600):
+            pid = np.random.randint(0, 997) % len(addresses)
+            tid = np.random.randint(0, 997) % len(addresses)
+
+            runs.append(
+                RiverRun(
+                    run_id=i,
+                    put_in_latitude=addresses[pid].latitude,
+                    put_in_longitude=addresses[pid].longitude,
+                    class_rating='I',
+                    max_level=100,
+                    min_level=10,
+                    take_out_latitude=addresses[tid].latitude,
+                    take_out_longitude=addresses[tid].longitude,
+                    distance=10,
+                    river_name=f'a river {i}',
+                    run_name=f'a run {i}'
+                )
+            )
+
+        strds, stations_per_run = [], 4  # four to ensure all sources exist for each run
+        for r in runs:
+            spr = stations_per_run
+
+            for s in stations:
+                d = ((s.latitude-r.put_in_latitude)**2+(s.longitude-r.put_in_longitude)**2)**.5
+                strds.append(
+                    StationRiverDistance(
+                        station_id=s.station_id,
+                        run_id=r.run_id,
+                        put_in_distance=d,
+                        take_out_distance=d
+                    )
+                )
+                spr -= 1
+                if spr == 0:
+                    break
+
+        metric_names = [
+            'Streamflow',
+            'Sensor Depth',
+            'Water Velocity',
+            'Precipitation (USGS)',
+            'Temperature (USGS)',
+            'Precipitation (NOAA)',
+            'Precipitation (USGS)',
+            'Snowpack'
+        ]
+        metrics = []
+        for i, n in enumerate(metric_names):
+            metrics.append(
+                Metric(
+                    description='a description',
+                    metric_id=i,
+                    name=n,
+                    units='a scalar'
+                )
+            )
+
+        self.session.add_all(stations)
+        self.session.add_all(runs)
+        self.session.add_all(strds)
+        self.session.add_all(metrics)
+        self.session.commit()
+
+        measurements = []
+        day, start, end = -10, datetime.datetime(2009, 1, 1), datetime.datetime(2016, 1, 1)
+        quit = end + datetime.timedelta(days=10)
+
+        while True:
+            md = start + datetime.timedelta(days=day)
+
+            measurements.append(
+                Measurement(
+                    station_id=stations[day % len(stations)].station_id,
+                    metric_id=metrics[day % len(metrics)].metric_id,
+                    date_time=md,
+                    value=day
+                )
+            )
+
+            day += 1
+            if md >= quit:
+                break
+
+        [self.session.merge(m) for m in measurements]
+        self.session.commit()
+
+        # assert
+        measurements = self.repo.get_measurements(run_id=500, start_date=start, end_date=end)
+
+        for m in measurements.iterrows():
+            self.assertTrue(start <= m[1].date_time < end)
+
+        self.assertTrue(set(self.context.weather_sources) == set(measurements.source.values))
