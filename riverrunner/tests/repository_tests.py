@@ -343,7 +343,7 @@ class TestRepository(TestCase):
         for i in range(10):
             measurements.append(
                 Measurement(
-                    station_id=stations[i % 2].station_id,
+                    station_id=stations[i % len(stations)].station_id,
                     metric_id=metric.metric_id,
                     date_time=now - datetime.timedelta(days=15, seconds=5 * i)
                 )
@@ -354,8 +354,7 @@ class TestRepository(TestCase):
 
         # assert
         measurements = self.repo.get_measurements(run_id=run.run_id)
-        self.assertTrue('NOAA' in measurements.source.values)
-        self.assertTrue('USGS' in measurements.source.values)
+        self.assertTrue(set(self.context.weather_sources) == set(measurements.source.values))
 
     def test_get_all_runs(self):
         # setup
