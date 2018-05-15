@@ -8,7 +8,13 @@ from unittest import TestCase
 
 
 class TestRepository(TestCase):
-    """test class for repository.py"""
+    """test class for repository.py
+
+    Attributes:
+        context (TContext): mock database context
+        session (sqlalchemy.orm.sessionmaker): managed connection to that context
+        repo (riverrunner.Repository): class being tested
+    """
 
     @classmethod
     def setUpClass(cls):
