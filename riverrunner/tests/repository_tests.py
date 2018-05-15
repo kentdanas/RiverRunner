@@ -411,8 +411,9 @@ class TestRepository(TestCase):
         strds, stations_per_run = [], 4  # four to ensure all sources exist for each run
         for r in runs:
             spr = stations_per_run
+            sidx = np.random.randint(0, len(stations)-4)
 
-            for s in stations:
+            for s in stations[sidx: sidx + stations_per_run]:
                 d = ((s.latitude-r.put_in_latitude)**2+(s.longitude-r.put_in_longitude)**2)**.5
                 strds.append(
                     StationRiverDistance(
