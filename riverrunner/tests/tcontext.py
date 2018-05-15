@@ -36,8 +36,12 @@ class TContext(context.Context):
     def clear_all_tables(session):
         """clear tables for unittest tear down
 
+        it is important that order of entities below remain in this order.
+        if not, the SQL statements will not complete from foreign key
+        dependency issues
+
         Args:
-            session (sqlalchemy.orm.sessionmaker): managed connection to mock db:
+            session (sqlalchemy.orm.sessionmaker): managed connection to mock db
 
         Returns:
             None

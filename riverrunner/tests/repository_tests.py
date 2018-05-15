@@ -8,8 +8,19 @@ from unittest import TestCase
 
 
 class TestRepository(TestCase):
+    """test class for repository.py"""
+
     @classmethod
     def setUpClass(cls):
+        """perform at test class initialization
+
+        Note:
+            * ensure only a TContext is used NEVER Context or we'll lose all
+            our hard-scraped data
+            * any existing data in the mock db will be deleted
+            * 5 random addresses are generated because nearly all unittests
+            require addresses to exist as a foreign key dependency
+        """
         cls.context = TContext()
         cls.session = cls.context.Session()
         cls.repo = Repository(session=cls.session)
@@ -19,13 +30,23 @@ class TestRepository(TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """perform when all tests are complete
+
+        removes all data from the mock database
+        """
         cls.context.clear_dependency_data(cls.session)
         cls.session.close()
 
     def tearDown(self):
+        """perform after each unittest
+
+        clears Prediction, StationRiverDistance, Measurement, Metric
+        Station, RiverRun tables
+        """
         self.context.clear_all_tables(self.session)
 
     def test_put_predictions_adds_one(self):
+        """test put_predictions can add one prediction"""
         # setup
         predictions = self.context.get_predictions_for_test(1, self.session)
 
@@ -34,6 +55,7 @@ class TestRepository(TestCase):
         self.assertTrue(result)
 
     def test_put_predictions_adds_many(self):
+        """test put_predictions can add many predictions at once"""
         # setup
         predictions = self.context.get_predictions_for_test(10, self.session)
 
@@ -42,6 +64,7 @@ class TestRepository(TestCase):
         self.assertTrue(result)
 
     def test_clear_predictions_empties_table(self):
+        """test clearing all predictions from db"""
         # setup
         predictions = self.context.get_predictions_for_test(10, self.session)
         self.repo.put_predictions(predictions)
@@ -52,6 +75,11 @@ class TestRepository(TestCase):
         self.assertEqual(len(predictions), 0)
 
     def test_get_measurements_returns_with_correct_date_range(self):
+        """test get_measurements exceptions
+
+        test that the method correctly throws an exception if it's
+        given an invalid date range
+        """
         # setup
         now = datetime.datetime.now()
 
@@ -116,6 +144,11 @@ class TestRepository(TestCase):
             self.assertTrue(now - datetime.timedelta(days=16) <= m[1].date_time < now - datetime.timedelta(days=14))
 
     def test_get_measurements_throws_if_start_is_later_than_end(self):
+        """test get_measurements exceptions
+
+        test that the method correctly throws an exception if it's
+        given an invalid date range
+        """
         # setup
         runs = self.context.get_runs_for_test(1, self.session)
         self.session.add_all(runs)
@@ -128,6 +161,11 @@ class TestRepository(TestCase):
                           end_date=now - datetime.timedelta(days=15))
 
     def test_get_measurements_throws_if_start_is_later_than_today(self):
+        """test get_measurements exceptions
+
+        test that the method correctly throws an exception if it's
+        given an invalid date range
+        """
         # setup
         runs = self.context.get_runs_for_test(1, self.session)
         self.session.add_all(runs)
@@ -139,11 +177,21 @@ class TestRepository(TestCase):
                           start_date=now + datetime.timedelta(days=10))
 
     def test_get_measurements_throws_if_run_id_does_not_exist_neg(self):
+        """test get_measurements exceptions
+
+        test that the method will throw an error when a given run
+        id does not exist in the db and the given id is negative
+        """
         # assert
         self.assertRaises(ValueError, self.repo.get_measurements,
                           run_id=-1)
 
     def test_get_measurements_throws_if_run_id_does_not_exist_pos(self):
+        """test get_measurements exceptions
+
+        test that the method will throw an error when a given run
+        id does not exist in the db and the given id is positive
+        """
         # setup
         rids = [r.run_id for r in self.repo.get_all_runs()]
         rid  = 0
@@ -155,6 +203,11 @@ class TestRepository(TestCase):
                           run_id=rid)
 
     def test_get_measurements_returns_past_thirty_if_no_date_range_is_given(self):
+        """test get_measurements behavior
+
+        test that the method returns only the past thirty days
+        if no date range is given as a calling argument
+        """
         # setup
         now = datetime.datetime.now()
 
@@ -217,6 +270,7 @@ class TestRepository(TestCase):
             self.assertTrue(m[1].date_time >= now - datetime.timedelta(30))
 
     def test_get_measurements_returns_from_more_than_one_station(self):
+        """test that more than one station is return when necessary"""
         # setup
         now = datetime.datetime.now()
 
@@ -358,6 +412,7 @@ class TestRepository(TestCase):
         self.assertTrue(set(self.context.weather_sources) == set(measurements.source.values))
 
     def test_get_all_runs(self):
+        """test whether all runs are returned"""
         # setup
         runs = self.context.get_runs_for_test(2, self.session)
         self.session.add_all(runs)
