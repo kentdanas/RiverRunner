@@ -5,6 +5,7 @@ from riverrunner.context import Address, Measurement, Metric, RiverRun, Station,
 from riverrunner.repository import Repository
 from riverrunner.tests.tcontext import TContext
 from unittest import TestCase
+from unittest import skip
 
 
 class TestRepository(TestCase):
@@ -366,6 +367,7 @@ class TestRepository(TestCase):
         runs = self.repo.get_all_runs()
         self.assertEqual(len(runs), 2)
 
+    @skip("passed 15 May 18, test takes ~50seconds so skip")
     def test_get_measurements_specific_range_1(self):
         """unittest for specific range
 
