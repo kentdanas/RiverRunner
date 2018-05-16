@@ -294,6 +294,16 @@ class Station(Base):
     def __str__(self):
         return self.name
 
+    @property
+    def dict(self):
+        return {
+            'station_id': self.station_id,
+            'source': self.source,
+            'name': self.name,
+            'latitude': self.latitude,
+            'longitude': self.longitude
+        }
+
 
 class StationRiverDistance(Base):
     """ORM mapping describing distances between runs and stations
@@ -309,9 +319,8 @@ class StationRiverDistance(Base):
     station_id = Column(ForeignKey('station.station_id'), primary_key=True)
     station = relationship('Station')
 
-    river_id = Column(ForeignKey('river_run.run_id'), primary_key=True)
-    put_in_distance   = Column(Float)
-    take_out_distance = Column(Float)
+    run_id = Column(ForeignKey('river_run.run_id'), primary_key=True)
+    distance   = Column(Float)
 
     @hybrid_property
     def source(self):
