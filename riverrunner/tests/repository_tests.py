@@ -94,7 +94,8 @@ class TestRepository(TestCase):
         station = Station(
             station_id='1',
             latitude=address.latitude,
-            longitude=address.longitude
+            longitude=address.longitude,
+            source='NOAA'
         )
 
         run = RiverRun(
