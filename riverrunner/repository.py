@@ -1,5 +1,7 @@
 import datetime
 import pandas as pd
+import psycopg2
+
 from riverrunner import context
 from riverrunner.context import Measurement, Prediction, RiverRun, Station, StationRiverDistance
 from riverrunner import settings
@@ -9,16 +11,22 @@ class Repository:
     """interface between application and backend
 
     """
-    def __init__(self, session=None):
+    def __init__(self, session=None, connection=None):
         if session is None:
             self.__context = context.Context(settings.DATABASE)
             self.__session = self.__context.Session()
         else:
             self.__session = session
 
+        if connection is None:
+            self.__connection = psycopg2.connect(**settings.PSYCOPG_DB)
+        else:
+            self.__connection = connection
+
     def __del__(self):
         self.__session.flush()
         self.__session.close()
+        self.__connection.close()
 
     def put_predictions(self, predictions):
         """add a set of predictions
@@ -54,6 +62,32 @@ class Repository:
         :return: None
         """
         self.__session.query(Prediction).delete()
+
+    def put_measurements(self, csv_file):
+        """ add a file of measurements
+
+        Note:
+            connection will rollback transaction if commit fails
+
+        Args:
+            csv_file (file): file object containing records to insert
+
+        Returns:
+            bool: success/exception
+
+        Raises:
+            Exception: if error occurs while connected to database
+        """
+        try:
+            with self.__connection.cursor() as cursor:
+                cursor.copy_from(csv_file, "measurement", sep=",")
+            self.__connection.commit()
+
+            return True
+        except:
+            self.__connection.rollback()
+
+            raise
 
     def get_measurements(self, run_id, start_date=None, end_date=None, min_distance=0.):
         """ get a set of measurements from the db
