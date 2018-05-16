@@ -22,10 +22,14 @@ class TContext(context.Context):
 
         Args:
 <<<<<<< HEAD
+<<<<<<< HEAD
             session (Session): managed connection to mock db
 =======
             session Session: managed connection to mock db
 >>>>>>> changed docstring arg
+=======
+            session (Session): managed connection to mock db
+>>>>>>> small changes to docstrings and one unit test
 
         Returns:
             None
@@ -46,10 +50,14 @@ class TContext(context.Context):
 
         Args:
 <<<<<<< HEAD
+<<<<<<< HEAD
             session (Session): managed connection to mock db
 =======
             session Session: managed connection to mock db
 >>>>>>> changed docstring arg
+=======
+            session (Session): managed connection to mock db
+>>>>>>> small changes to docstrings and one unit test
 
         Returns:
             None
@@ -73,11 +81,7 @@ class TContext(context.Context):
         generates and inserts a random set of addresses into the db
 
         Args:
-<<<<<<< HEAD
             session (Session): managed connection to mock db
-=======
-            session Session: managed connection to mock db
->>>>>>> changed docstring arg
 
         Returns:
             None
@@ -160,10 +164,14 @@ class TContext(context.Context):
         Args:
             i (int): number of predictions to generate
 <<<<<<< HEAD
+<<<<<<< HEAD
             session (Session): managed connection to mock db
 =======
             session Session: managed connection to mock db
 >>>>>>> changed docstring arg
+=======
+            session (Session): managed connection to mock db
+>>>>>>> small changes to docstrings and one unit test
 
         Return:
             [Prediction]: list containing i random predictions
@@ -199,10 +207,14 @@ class TContext(context.Context):
         Args:
             i (int): number of runs to generate
 <<<<<<< HEAD
+<<<<<<< HEAD
             session (Session): managed connection to mock db
 =======
             session Session: managed connection to mock db
 >>>>>>> changed docstring arg
+=======
+            session (Session): managed connection to mock db
+>>>>>>> small changes to docstrings and one unit test
 
         Returns:
             [RiverRun]: list containing i random runs
@@ -234,10 +246,14 @@ class TContext(context.Context):
         Args:
             i (int): number of stations to generate
 <<<<<<< HEAD
+<<<<<<< HEAD
             session (Session): managed connection to mock db
 =======
             session Session: managed connection to mock db
 >>>>>>> changed docstring arg
+=======
+            session (Session): managed connection to mock db
+>>>>>>> small changes to docstrings and one unit test
 
         Returns:
             [Station]: list containing i random stations
