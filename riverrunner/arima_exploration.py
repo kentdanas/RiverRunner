@@ -1,10 +1,14 @@
 """
-Module for exploring river run flow rate data and exogenous predictors to determine
-best parameters for ARIMA model.
+Module for data exploration for ARIMA modeling.
+
+This module contains the back-end exploration of river run flow rate data and exogenous
+predictors to determine the best way to create a time-series model of the data. Note that
+since this module was only used once (i.e. is not called in order to create ongoing predictions),
+it is not accompanied by any unit testing.
 
 Functions:
-    daily_avg: takes time series with measurements of different timeframes and creates
-    dataframe with daily averages
+    daily_avg: takes time series with measurements on different timeframes and creates a
+    dataframe with daily averages for flow rate and exogenous predictors
 
     test_stationarity: implements Dickey-Fuller test and rolling average plots to check
     for stationarity of the time series
@@ -15,8 +19,8 @@ Functions:
 
 import datetime
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 from riverrunner.repository import Repository
 from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.stattools import acf, pacf
@@ -25,37 +29,61 @@ from statsmodels.tsa.stattools import arma_order_select_ic
 
 repo = Repository()
 
-# get data
-start = datetime.datetime(2006, 1, 1)
-end = datetime.datetime(2016, 1, 1)
-test_measures = repo.get_measurements(run_id=599, start_date=start, end_date=end)
 
 def daily_avg(time_series):
-    """
-    Takes output from get_measurements function and creates dataframe containing
-    daily averages
-    :param time_series: dataframe with flow rates, assumes output from
-    get_measurements function
-    :return: time_series_daily: dataframe with daily flow rate averages
-    """
+    """Creates dataframe needed for modelling
 
-    time_series['date_time'] = pd.to_datetime(time_series['date_time'], utc=True)
-    time_series.index = time_series['date_time']
-    time_series_daily = time_series.resample('D').mean()
-    time_series_daily = time_series_daily.dropna()
+    Takes time series with measurements on different timeframes and creates a
+    dataframe with daily averages for flow rate and exogenous predictors.
+
+    Args:
+        time_series: dataframe with metrics for one run_id, assumes output from
+        get_measurements function
+
+    Returns:
+        DataFrame: containing daily measurements
+    """
+    precip = time_series[time_series.metric_id == '00003']
+    precip['date_time'] = pd.to_datetime(precip['date_time'], utc=True)
+    precip.index = precip['date_time']
+    precip_daily = precip.resample('D').sum()
+
+    flow = time_series[time_series.metric_id == '00060']
+    flow['date_time'] = pd.to_datetime(flow['date_time'], utc=True)
+    flow.index = flow['date_time']
+    flow_daily = flow.resample('D').mean()
+
+    temp = time_series[time_series.metric_id == '00001']
+    temp['date_time'] = pd.to_datetime(temp['date_time'], utc=True)
+    temp.index = temp['date_time']
+    temp_daily = temp.resample('D').mean()
+
+    time_series_daily = temp_daily.merge(flow_daily, how='inner', left_index=True, right_index=True)\
+        .merge(precip_daily, how='inner', left_index=True, right_index=True)
+    time_series_daily.columns = ['temp', 'flow', 'precip']
     return time_series_daily
 
+
 def test_stationarity(time_series):
-    """
-    Performs Dickey-Fuller test for stationarity and plots rolling mean and standard
-    deviation for visual check
-    :param time_series: dataframe with daily flow rate averages
-    :return: bool, returns True if data is stationary according to Dickey-Fuller test at
-    0.05 level of significance
+    """Visual and statistical tests to test for stationarity of flow rate.
+
+    Performs Dickey-Fuller statistical test for stationarity at 0.05 level of
+    significance and plots 12-month rolling mean and standard deviation against
+    raw data for visual review of stationarity.
+
+    Args:
+        time_series: dataframe containing flow rate and exogneous predictor data for
+        one river run (assumes output of daily_avg function).
+
+    Returns:
+        bool: True if data is stationary according to Dickey-Fuller test at
+        0.05 level of significance, False otherwise.
+        plot: containing rolling mean and standard deviation against raw data time series.
+
     """
     # Determine rolling statistics
-    rollmean = time_series.rolling(window=30, center=False).mean()
-    rollstd = time_series.rolling(window=30, center=False).std()
+    rollmean = time_series.rolling(window=365, center=False).mean()
+    rollstd = time_series.rolling(window=365, center=False).std()
 
     # Plot rolling statistics
     plt.plot(time_series, color='blue', label='Raw Data')
@@ -63,12 +91,12 @@ def test_stationarity(time_series):
     plt.plot(rollstd, color='orange', label='Rolling Standard Deviation')
     plt.title('Rolling Statistics')
     plt.legend()
-    plt.show();
+    plt.show()
 
     # Dickey-Fuller test
-    dftest = adfuller(time_series.iloc[:, 0], autolag='AIC')
+    dftest = adfuller(time_series, autolag='BIC')
 
-    if dftest[0] < dftest[4]['5%']:
+    if dftest[0] < dftest[4]['1%']:
         return True
     else:
         return False
@@ -77,12 +105,18 @@ def test_stationarity(time_series):
 def plot_autocorrs(time_series):
     """
     Creates plots of auto-correlation function (acf) and partial auto-correlation function
-    (pacf) to help determine p and q parameters for ARIMA model
-    :param time_series: dataframe with daily flow rate averages
-    :return: plots of acf and pacf
+    (pacf) to help determine p and q parameters for ARIMA model.
+
+    Args:
+        time_series: dataframe containing flow rate and exogneous predictor data for
+        one river run (assumes output of daily_avg function).
+
+    Returns:
+        plots: containing acf and pacf of flow rate against number of lags.
+
     """
-    lag_acf = acf(time_series, nlags=400)
-    lag_pacf = pacf(time_series, method='ols')
+    lag_acf = acf(time_series['flow'], nlags=400)
+    lag_pacf = pacf(time_series['flow'], method='ols')
 
     plt.subplot(121)
     plt.plot(lag_acf)
@@ -98,29 +132,33 @@ def plot_autocorrs(time_series):
     plt.title('PACF')
     plt.tight_layout()
 
+
+# Retrieve data for one run to model
+start = datetime.datetime(2014, 5, 18)
+end = datetime.datetime(2018, 5, 17)
+test_measures = repo.get_measurements(run_id=487, start_date=start, end_date=end)
+
 # Average data and create train/test split
 measures_daily = daily_avg(test_measures)
-train_measures_daily = measures_daily[:-10]
-test_measures_daily = measures_daily[-10:]
+train_measures_daily = measures_daily[:-6]
+test_measures_daily = measures_daily[-7:]
+train_measures_daily = train_measures_daily.dropna()
 
-# Ensure data is stationary
-test_stationarity(train_measures_daily)
+# Check if data is stationary
+test_stationarity(train_measures_daily['flow'])
 
-# Determine p and q parameters
-params = arma_order_select_ic(train_measures_daily, ic='aic')
+# Determine p and q parameters for ARIMA model
+params = arma_order_select_ic(train_measures_daily['flow'], ic='aic')
 
 # Build and fit model
-mod = ARIMA(train_measures_daily, order=(params.aic_min_order[0], 0, params.aic_min_order[1]))
-results = mod.fit()
-test_measures_daily['prediction'] = results.forecast(steps=10)[0]
-train_measures_daily['model'] = results.predict()
+mod = ARIMA(train_measures_daily['flow'], order=(params.aic_min_order[0], 0, params.aic_min_order[1]),
+            exog=train_measures_daily[['temp', 'precip']]).fit()
+test_measures_daily.loc[:, 'prediction'] = \
+    mod.forecast(steps=7, exog=test_measures_daily[['temp', 'precip']])[0]
+train_measures_daily.loc[:, 'model'] = mod.predict()
 
 # Plot results
-plt.plot(test_measures_daily[['value', 'prediction']])
-plt.plot(train_measures_daily[['value', 'model']]['2015-07':])
+plt.plot(test_measures_daily[['flow', 'prediction']])
+plt.plot(train_measures_daily[['flow', 'model']]['2015-07':])
 plt.legend(['Test values', 'Prediction', 'Train values', 'Model'])
-
-
-
-
 
