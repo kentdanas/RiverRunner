@@ -6,10 +6,13 @@ Classes:
         Functions:
             get_data: retrieves needed data for selected run
 
-            daily_avg: takes time series with measurements on different timeframes and creates a
-            dataframe with daily averages for flow rate and exogenous predictors
+            daily_avg: takes time series with measurements on different timeframes and
+            creates a dataframe with daily averages for flow rate and exogenous predictors
 
             arima_model: creates flow rate predictions using statsmodel package functions
+
+            get_min_max: use get_all_runs function to query database and then pull min and
+            max runnable flow rate for given run
 """
 
 import datetime
@@ -19,6 +22,7 @@ from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.stattools import arma_order_select_ic
 
 repo = Repository()
+
 
 class Arima:
     """
@@ -81,8 +85,8 @@ class Arima:
         """Creates flow rate predictions using ARIMA model.
 
         Calls Arima.daily_avg to retrieve data for given run, then creates flow rate
-        predictions by using statsmodels functions arma_order_select_ic and ARIMA. Two weeks
-        of past flow rate data are also returned for plotting purposes.
+        predictions by using statsmodels functions arma_order_select_ic and ARIMA.
+        Three weeks of past flow rate data are also returned for plotting purposes.
 
         Args:
             run_id (int): id of run for which model will be created

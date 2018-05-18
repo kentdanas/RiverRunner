@@ -5,6 +5,7 @@ import numpy as np
 from riverrunner.arima import Arima
 import unittest
 
+
 class TestArima(unittest.TestCase):
     """test class for arima.py
 
@@ -59,7 +60,7 @@ class TestArima(unittest.TestCase):
         """
         try:
             self.arima.arima_model(run_id=600)
-        except:
+        except Exception:
             self.fail("arima_model() raised Exception unexpectedly")
 
     def test_arima_model_still_returns_prediction_if_ARIMA_fails(self):
@@ -70,7 +71,7 @@ class TestArima(unittest.TestCase):
         """
         try:
             self.arima.arima_model(run_id=477)
-        except:
+        except Exception:
             self.fail("arima_model() raised Exception unexpectedly")
 
     def test_get_min_max_returns_correct_min(self):

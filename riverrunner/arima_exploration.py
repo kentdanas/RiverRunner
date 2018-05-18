@@ -3,8 +3,8 @@ Module for data exploration for ARIMA modeling.
 
 This module contains the back-end exploration of river run flow rate data and exogenous
 predictors to determine the best way to create a time-series model of the data. Note that
-since this module was only used once (i.e. is not called in order to create ongoing predictions),
-it is not accompanied by any unit testing.
+since this module was only used once (i.e. is not called in order to create ongoing
+predictions), it is not accompanied by any unit testing.
 
 Functions:
     daily_avg: takes time series with measurements on different timeframes and creates a
@@ -58,7 +58,8 @@ def daily_avg(time_series):
     temp.index = temp['date_time']
     temp_daily = temp.resample('D').mean()
 
-    time_series_daily = temp_daily.merge(flow_daily, how='inner', left_index=True, right_index=True)\
+    time_series_daily = temp_daily.merge(flow_daily, how='inner',
+                                         left_index=True, right_index=True)\
         .merge(precip_daily, how='inner', left_index=True, right_index=True)
     time_series_daily.columns = ['temp', 'flow', 'precip']
     return time_series_daily
@@ -151,7 +152,8 @@ test_stationarity(train_measures_daily['flow'])
 params = arma_order_select_ic(train_measures_daily['flow'], ic='aic')
 
 # Build and fit model
-mod = ARIMA(train_measures_daily['flow'], order=(params.aic_min_order[0], 0, params.aic_min_order[1]),
+mod = ARIMA(train_measures_daily['flow'],
+            order=(params.aic_min_order[0], 0, params.aic_min_order[1]),
             exog=train_measures_daily[['temp', 'precip']]).fit()
 test_measures_daily.loc[:, 'prediction'] = \
     mod.forecast(steps=7, exog=test_measures_daily[['temp', 'precip']])[0]
