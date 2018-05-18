@@ -70,7 +70,8 @@ class Arima:
         temp.index = temp['date_time']
         temp_daily = temp.resample('D').mean()
 
-        time_series_daily = temp_daily.merge(flow_daily, how='inner', left_index=True, right_index=True) \
+        time_series_daily = temp_daily.merge(flow_daily, how='inner', left_index=True,
+                                             right_index=True)\
             .merge(precip_daily, how='inner', left_index=True, right_index=True)
         time_series_daily.columns = ['temp', 'flow', 'precip']
         time_series_daily = time_series_daily.dropna()
@@ -87,27 +88,52 @@ class Arima:
             run_id (int): id of run for which model will be created
 
         Returns:
-            DataFrame: containing time-series flow rate predictions for next 7 days
-            DataFrame: containing time-series historical flow rate for past 14 days
+            DataFrame: containing time-series flow rate predictions for next 7 days and
+            historical flow rate for past 21 days
         """
         # Retrieve data for modelling
         measures = self.daily_avg(run_id)
 
         # Take past 7-day average of exogenous predictors to use for future prediction
-        exog_future_predictors = pd.concat([measures.iloc[-7:, :].mean(axis=0).to_frame().T]*7, ignore_index=True)
+        exog_future_predictors = pd.concat([measures.iloc[-7:, :].mean(axis=0).to_frame().T]*7,
+                                           ignore_index=True)
 
-        # Find optimal order for model
-        params = arma_order_select_ic(measures['flow'], ic='aic')
+        try:
+            # Find optimal order for model
+            params = arma_order_select_ic(measures['flow'], ic='aic')
+            try:
+                # Build and fit model
+                mod = ARIMA(measures['flow'],
+                            order=(params.aic_min_order[0], 0, params.aic_min_order[1]),
+                            exog=measures[['temp', 'precip']]).fit()
+                prediction = pd.DataFrame(
+                    [mod.forecast(steps=7, exog=exog_future_predictors[['temp', 'precip']],
+                                                        alpha=0.05)[0]]).T
+            except Exception:
+                # If model doesn't converge, return "prediction" of most recent day
+                prediction = pd.concat([measures.iloc[-1, :].to_frame().T] * 7,
+                                       ignore_index=True)['flow']
+        except ValueError:
+            # If order fitting doesn't converge, return "prediction" of most recent day
+            prediction = pd.concat([measures.iloc[-1, :].to_frame().T] * 7,
+                                   ignore_index=True)['flow']
 
-        # Build and fit model
-        mod = ARIMA(measures['flow'], order=(params.aic_min_order[0], 0, params.aic_min_order[1]),
-                    exog=measures[['temp', 'precip']]).fit()
-        prediction = pd.DataFrame([mod.forecast(steps=7, exog=exog_future_predictors[['temp', 'precip']],
-                                                alpha=0.05)[0]]).T
-
-        # Add dates and return past 14 days for plotting
-        prediction_dates = [measures.index[-1] + datetime.timedelta(days=x) for x in range(0, 7)]
+        # Add dates and return past 21 days for plotting
+        prediction_dates = [measures.index[-2] + datetime.timedelta(days=x) for x in range(0, 7)]
         prediction.index = prediction_dates
-        past = measures['flow'][-15:-1]
-        return prediction, past
+        past = measures['flow'][-22:-1]
+        prediction = pd.concat([past, prediction], axis=0)
+        return prediction
 
+    def get_min_max(self, run_id):
+        """Gets min and max runnable flow rate for river run to use for plots
+
+        Args:
+            run_id: id of run for which model will be created
+
+        Returns:
+            levels: minimum and maximum runnable flow rate for river
+        """
+        runs = repo.get_all_runs()
+        levels = runs[['min_level', 'max_level']][runs['run_id'] == run_id]
+        return levels
