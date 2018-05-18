@@ -66,8 +66,9 @@ class Repository:
     def put_measurements(self, csv_file):
         """ add a file of measurements
 
-        Note:
-            connection will rollback transaction if commit fails
+        Notes:
+            * will overwrite previous values with same primary key
+            * connection will rollback transaction if commit fails
 
         Args:
             csv_file (file): file object containing records to insert
@@ -80,7 +81,17 @@ class Repository:
         """
         try:
             with self.__connection.cursor() as cursor:
-                cursor.copy_from(csv_file, "measurement", sep=",")
+                cursor.copy_from(csv_file, "tmp_measurement", sep=",")
+                cursor.execute("""
+                    INSERT into measurement
+                        SELECT * FROM tmp_measurement
+                    ON CONFLICT (station_id, metric_id, date_time)
+                        DO UPDATE SET value = EXCLUDED.value;
+                """)
+                cursor.execute("""
+                    DELETE FROM tmp_measurement;
+                """)
+
             self.__connection.commit()
 
             return True

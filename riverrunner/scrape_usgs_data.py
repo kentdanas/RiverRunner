@@ -1,4 +1,18 @@
-import dateutil
+""" script that scrapes and uploads USGS data
+
+Examples:
+    python scrape_usgs_data.py --manual start-date end-date
+
+    * scrapes and uploads data over the specified date range
+    * start-date and end-date must be in the format 'YYYY-MM-DD'
+
+    python scrape_usgs_data.py --daily days-back
+
+    * scrapes and uploads data from days-back before yesterday to yesterday
+    * days-back must be an integer
+"""
+
+import datetime
 import json
 import requests
 import sys
@@ -15,7 +29,7 @@ USGS_SITE_STATUS = "all"
 
 
 def get_site_ids():
-    """retrieve site ids from file
+    """ retrieve site ids from file
 
     Returns:
         [string]: list of site ids
@@ -27,7 +41,7 @@ def get_site_ids():
 
 
 def get_param_codes():
-    """retrieve parameter codes from file
+    """ retrieve parameter codes from file
 
     Returns:
         [string]: list of parameter codes
@@ -39,7 +53,7 @@ def get_param_codes():
 
 
 def get_json_data(site_id, start_date, end_date, param_code):
-    """retrieve JSON data for a specific site, parameter, and date range
+    """ retrieve JSON data for a specific site, parameter, and date range
 
     Args:
         site_id (string): string representation of site id
@@ -74,7 +88,7 @@ def get_json_data(site_id, start_date, end_date, param_code):
 
 
 def scrape_usgs_data(start_date, end_date):
-    """scrape data for all sites and parameters, over the specified date range
+    """ scrape data for all sites and parameters, over the specified date range
 
     Args:
         start_date (string): start date in the format 'YYYY-MM-DD'
@@ -83,22 +97,28 @@ def scrape_usgs_data(start_date, end_date):
     Returns:
         [string]: list of full paths of CSV files that were written to
     """
+    start_date_file_ext = start_date.replace("-", "")
+    end_date_file_ext = end_date.replace("-", "")
     site_ids = get_site_ids()
     param_codes = get_param_codes()
     out_files = []
     for param_code in param_codes:
-        out_file = DATA_DIR + "measurements_{}.csv".format(param_code)
+        total_values = 0
+        out_file = DATA_DIR + "measurements_{}_{}_{}.csv".format(
+            param_code,
+            start_date_file_ext,
+            end_date_file_ext
+        )
         out_files.append(out_file)
         with open(out_file, "w") as f:
             for site_id in site_ids:
-                print("{}, {}: ".format(param_code, site_id), end="")
                 json_data = get_json_data(
                     site_id=site_id,
                     start_date=start_date,
                     end_date=end_date,
                     param_code=param_code
                 )
-                print("{}".format(len(json_data)))
+                total_values += len(json_data)
                 for date_time, value in json_data.items():
                     f.write("{},{},{},{}\n".format(
                         site_id,
@@ -106,11 +126,12 @@ def scrape_usgs_data(start_date, end_date):
                         date_time,
                         value
                     ))
+        print("{}: {}".format(param_code, total_values))
     return out_files
 
 
 def upload_data_from_file(csv_file):
-    """insert all records contained in file to database
+    """ insert all records contained in file to database
 
     Args:
         csv_file (string): full path of CSV file containing records
@@ -125,15 +146,21 @@ def upload_data_from_file(csv_file):
 
 
 if __name__ == "__main__":
-    #start_date = "2018-01-01"
-    #end_date = "2018-04-30"
-    #csv_files = scrape_usgs_data(start_date=start_date, end_date=end_date)
-    csv_files = [
-        "data/measurements_72254.csv",
-        #"data/measurements_72147.csv",
-        #"data/measurements_00021.csv",
-        #"data/measurements_00045.csv",
-        #"data/measurements_00060.csv"
-    ]
+    # python scrape_usgs_data.py --manual start-date end-date
+    # python scrape_usgs_data.py --daily days-back
+
+    if sys.argv[1] == "--manual":
+        start_date, end_date = sys.argv[2:]
+
+    elif sys.argv[1] == "--daily":
+        days_back = int(sys.argv[2])
+        today = datetime.date.today()
+        end_date = today - datetime.timedelta(days=1)
+        start_date = end_date - datetime.timedelta(days=days_back)
+        end_date = end_date.isoformat()
+        start_date = start_date.isoformat()
+
+    csv_files = scrape_usgs_data(start_date=start_date, end_date=end_date)
     for csv_file in csv_files:
+        print("uploading {}...".format(csv_file))
         success = upload_data_from_file(csv_file)
