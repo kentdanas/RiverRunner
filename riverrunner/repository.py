@@ -71,7 +71,7 @@ class Repository:
             * connection will rollback transaction if commit fails
 
         Args:
-            csv_file (file): file object containing records to insert
+            csv_file (file): name of file containing records to insert
 
         Returns:
             bool: success/exception
@@ -81,7 +81,8 @@ class Repository:
         """
         try:
             with self.__connection.cursor() as cursor:
-                cursor.copy_from(csv_file, "tmp_measurement", sep=",")
+                with open(csv_file, "r") as f:
+                    cursor.copy_from(f, "tmp_measurement", sep=",")
                 cursor.execute("""
                     INSERT into measurement
                         SELECT * FROM tmp_measurement

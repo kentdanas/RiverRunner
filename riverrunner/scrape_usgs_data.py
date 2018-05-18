@@ -140,8 +140,7 @@ def upload_data_from_file(csv_file):
         bool: success/exception
     """
     r = repository.Repository()
-    with open(csv_file, "r") as f:
-        success = r.put_measurements(csv_file=f)
+    success = r.put_measurements(csv_file=csv_file)
     return success
 
 
