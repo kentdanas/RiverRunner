@@ -98,12 +98,11 @@ class Measurement(Base):
     Index('idx_date_time', 'date_time')
 
     def __repr__(self):
-        return '<Measurement(station_id="%s", datetime="%s", metric="%s")>' % \
-               (self.station_id, self.date_time, self.metric.name)
+        return f'<Measurement(station_id="{self.station_id}", datetime="{self.date_time}", metric="{self.metric_id}")>'
 
     def __str__(self):
         return 'station: %s, datetime: %s, metric: %s' % \
-               (self.station_id, self.date_time, self.metric.name)
+               (self.station_id, self.date_time, self.metric_id)
 
     @property
     def dict(self):
@@ -134,10 +133,10 @@ class Metric(Base):
     units = Column(String(31))
 
     def __repr__(self):
-        return '<Metric(metric_id="%s", name="%s")>' % (self.metric_id, self.name)
+        return f'<Metric(metric_id="{self.metric_id}", name="{self.name}")>'
 
     def __str__(self):
-        return 'metric_id: %s, name: %s' % (self.metric_id, self.name)
+        return f'metric_id: {self.metric_id}, name: {self.name}'
 
 
 class Prediction(Base):
@@ -242,6 +241,10 @@ class RiverRun(Base):
             'take_out_latitude': self.take_out_latitude,
             'take_out_longitude': self.take_out_longitude
         }
+
+    @property
+    def select_option(self):
+        return {'label': self.run_name, 'value': self.run_id}
 
 
 class State(Base):
