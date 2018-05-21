@@ -12,7 +12,8 @@ import time
 def log(message):
     print(message)
 
-    with open(f'{datetime.datetime.today()}_log.txt', 'a+') as f:
+    now = datetime.datetime.today()
+    with open(f'riverrunner/data/logs/{now.year}{now.month}{now.day}_log.txt', 'a+') as f:
         f.write(f'{datetime.datetime.now().isoformat()}: {message}\n')
 
 
@@ -25,10 +26,17 @@ def get_weather_observations(session, attempt=0):
 
         log(f'added {added} observations to db')
         return True
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        log(f'failed to gather daily observations - {str(e.args)}')
+        time.sleep(600)
+        get_weather_observations(session, attempt + 1)
+
     except Exception as e:
         log(f'failed to gather daily observations - {str(e.args)}')
         time.sleep(600)
-        get_weather_observations(attempt+1)
+        get_weather_observations(session, attempt+1)
         return False
 
 
@@ -61,20 +69,23 @@ def compute_predictions(session):
                     Prediction(
                         run_id=run.run_id,
                         timestamp=pd.to_datetime(d),
-                        fr_lb=round(p, 1),
-                        fr=round(p, 1),
-                        fr_ub=round(p, 1)
+                        fr_lb=round(float(p), 1),
+                        fr=round(float(p), 1),
+                        fr_ub=round(float(p), 1)
                     )
                     for p, d in zip(predictions.values, predictions.index.values)
                 ]
 
                 repo.put_predictions(to_add)
                 log(f'predictions for {run.run_id}-{run.run_name} added to db')
+
             except SQLAlchemyError as e:
                 log(f'{run.run_id}-{run.run_name} failed - {[str(a) for a in e.args]}')
                 session.rollback()
             except Exception as e:
+
                 log(f'predictions for {run.run_id}-{run.run_name} failed - {[str(a) for a in e.args]}')
+
     except Exception as e:
         log(f'failed to compute daily predictions - {str(e.args)}')
         return False
@@ -84,8 +95,8 @@ def daily_run():
     context = Context(settings.DATABASE)
     session = context.Session()
 
-    get_weather_observations(session)
-    get_usgs_observations()
+    #get_weather_observations(session)
+    #get_usgs_observations()
     compute_predictions(session)
 
     session.close()

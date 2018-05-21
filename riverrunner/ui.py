@@ -2,7 +2,7 @@ import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
-from datetime import datetime
+import datetime
 import numpy as np
 import plotly.graph_objs as go
 from riverrunner.repository import Repository
@@ -102,6 +102,8 @@ def update_timeseries(value=599, pl=None):
 
     repo = Repository()
     predictions = repo.get_predictions(value)
+    if predictions is None:
+        return None
 
     prediction_plot = go.Scatter(
         x=predictions['dates'],
