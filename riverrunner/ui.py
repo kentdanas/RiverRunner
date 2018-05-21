@@ -45,9 +45,11 @@ app.layout = html.Div([
             )
         ],
         style={
-            'width': '50%',
+            'width': '80%',
             'padding': 10,
-            'contentAlign': 'center'
+            'textAlign': 'center',
+            'marginLeft': 'auto',
+            'marginRight': 'auto'
         }
     ),
     html.Div(
@@ -105,43 +107,58 @@ def update_timeseries(value=599, pl=None):
     if predictions is None:
         return None
 
-    prediction_plot = go.Scatter(
-        x=predictions['dates'],
-        y=predictions['values']
+    observed = go.Scatter(
+        x=predictions['observed']['dates'],
+        y=predictions['observed']['values'],
+        line=dict(
+            color='#252E75',
+            width=4
+        )
     )
 
-    max_line = {
-        'type': 'line',
-        'x0': np.min(predictions['dates']),
-        'y0': predictions['max_fr'],
-        'x1': np.max(predictions['dates']),
-        'y1': predictions['max_fr'],
-        'line': {
-            'color': '#B24D00',
-            'width': 2,
-            'dash': 'dot'
-        }
-    }
+    predictions = go.Scatter(
+        x=predictions['predicted']['dates'],
+        y=predictions['predicted']['values'],
+        line=dict(
+            color='#C44200',
+            width=4
+        )
+    )
 
-    min_line = {
-        'type': 'line',
-        'x0': np.min(predictions['dates']),
-        'y0': predictions['min_fr'],
-        'x1': np.max(predictions['dates']),
-        'y1': predictions['min_fr'],
-        'line': {
-            'color': '#B24D00',
-            'width': 2,
-            'dash': 'dot'
-        }
-    }
+    max_line = go.Scatter(
+        x=[np.min(predictions['dates']), np.max([predictions['dates']])],
+        y=[predictions['max_fr'], predictions['max_fr']],
+        line=dict(
+            color='#123B38',
+            width=1,
+            dash='dot')
+    )
 
-    layout = go.Layout(xaxis=dict(
-        range=[
-            (datetime.datetime.now()-datetime.timedelta(days=20)).isoformat(),
-            (datetime.datetime.now()+datetime.timedelta(days=10)).isoformat()
-        ]
-    ))
+    min_line = go.Scatter(
+        x=[np.min(predictions['dates']), np.max([predictions['dates']])],
+        y=[predictions['min_fr'], predictions['min_fr']],
+        line=dict(
+            color='#123B38',
+            width=1,
+            dash='dot')
+    )
+
+    layout = go.Layout(title="Flow Rate", xaxis={'title': 'Date'}, yaxis={'title': 'Flow Rate'},
+                       shapes=[{
+                                'type': 'rect',
+                                'xref': 'x',
+                                'yref': 'y',
+                                'x0': np.min(predictions['dates']),
+                                'y0': predictions['min_fr'],
+                                'x1': np.max(predictions['dates']),
+                                'y1': predictions['max_fr'],
+                                'fillcolor': '#d3d3d3',
+                                'opacity': 0.2,
+                                'line': {
+                                    'width': 0,
+                                }
+                            }
+                       ])
 
     fig = go.Figure(data=[prediction_plot, max_line, min_line], layout=layout)
     return fig

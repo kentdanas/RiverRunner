@@ -198,15 +198,17 @@ class Repository:
             Prediction.run_id == run_id
         ).all()
 
-        # convert dates for plotting
-        def to_unix_time(dt):
-            epoch = datetime.datetime.utcfromtimestamp(0)
-            return (dt - epoch).total_seconds() * 1000
-
+        today = datetime.datetime.today()
         if len(predictions) > 0:
             return {
-                'dates':  [datetime.datetime(p.timestamp) for p in predictions],
-                'values': [p.fr for p in predictions],
+                'observed': {
+                    'dates': [p.timestamp for p in predictions if p < today],
+                    'values': [p.fr for p in predictions if p < today]
+                },
+                'predicted': {
+                    'dates': [p.timestamp for p in predictions if p >= today],
+                    'values': [p.fr for p in predictions if p >= today]
+                },
                 'max_fr': run.max_level,
                 'min_fr': run.min_level
             }
