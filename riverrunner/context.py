@@ -159,18 +159,6 @@ class Prediction(Base):
     fr    = Column(Float)
     fr_ub = Column(Float)
 
-    @hybrid_property
-    def year(self):
-        return self.timestamp.year
-
-    @hybrid_property
-    def month(self):
-        return self.timestamp.month
-
-    @hybrid_property
-    def day(self):
-        return self.timestamp.day
-
     def __repr__(self):
         return '<Prediction(run_id="%s", datetime="%s")>' % (self.run_id, self.timestamp)
 

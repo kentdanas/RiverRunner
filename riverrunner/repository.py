@@ -176,6 +176,43 @@ class Repository:
         df = pd.DataFrame([m.dict for m in measurements])
         return df
 
+    def get_predictions(self, run_id):
+        """get current predictions for run
+
+        Args:
+            run_id (int): run id
+
+        Returns:
+            {
+                'dates': [DateTime],
+                'values': [float],
+                'max_fr': float,
+                'min_fr: float
+            }: dictionary containing necessary values for plotting
+        """
+        # make sure run exists
+        run = self.get_run(run_id)
+
+        # get the predictions
+        predictions = self.__session.query(Prediction).filter(
+            Prediction.run_id == run_id
+        ).all()
+
+        # convert dates for plotting
+        def to_unix_time(dt):
+            epoch = datetime.datetime.utcfromtimestamp(0)
+            return (dt - epoch).total_seconds() * 1000
+
+        if len(predictions) > 0:
+            return {
+                'dates':  [to_unix_time(p.timestamp) for p in predictions],
+                'values': [p.fr for p in predictions],
+                'max_fr': run.max_level,
+                'min_fr': run.min_level
+            }
+        else:
+            return None
+
     def get_run(self, run_id):
         """retrieve a single run
 

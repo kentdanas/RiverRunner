@@ -131,7 +131,6 @@ class Arima:
         past = measures['flow'][-22:-1]
         prediction = pd.concat([past[:-1], prediction], axis=0)
 
-
         return prediction
 
     def get_min_max(self, run_id):
