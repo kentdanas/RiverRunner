@@ -202,12 +202,12 @@ class Repository:
         if len(predictions) > 0:
             return {
                 'observed': {
-                    'dates': [p.timestamp for p in predictions if p < today],
-                    'values': [p.fr for p in predictions if p < today]
+                    'dates': [p.timestamp for p in predictions if p.timestamp < today],
+                    'values': [p.fr for p in predictions if p.timestamp < today]
                 },
                 'predicted': {
-                    'dates': [p.timestamp for p in predictions if p >= today],
-                    'values': [p.fr for p in predictions if p >= today]
+                    'dates': [p.timestamp for p in predictions if p.timestamp >= today],
+                    'values': [p.fr for p in predictions if p.timestamp >= today]
                 },
                 'max_fr': run.max_level,
                 'min_fr': run.min_level
