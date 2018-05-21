@@ -27,13 +27,13 @@ class Repository:
         self.__session.close()
         self.__connection.close()
 
-    def clear_predictions(self):
+    def clear_predictions(self, run_id):
         """delete all existing predictions from database
 
         Returns
          None
         """
-        self.__session.query(Prediction).delete()
+        self.__session.query(Prediction).filter(Prediction.run_id == run_id).delete()
 
     def get_all_runs(self):
         """retrieve all runs from db

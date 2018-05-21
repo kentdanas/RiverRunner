@@ -5,8 +5,15 @@ from riverrunner.context import Context, Prediction
 from riverrunner import continuous_noaa, settings
 from riverrunner.scrape_usgs_data import *
 from riverrunner.repository import Repository
-import sys
+from sqlalchemy.exc import SQLAlchemyError
 import time
+
+
+def log(message):
+    print(message)
+
+    with open(f'{datetime.datetime.today()}_log.txt', 'a+') as f:
+        f.write(f'{datetime.datetime.now().isoformat()}: {message}\n')
 
 
 def get_weather_observations(session, attempt=0):
@@ -16,10 +23,10 @@ def get_weather_observations(session, attempt=0):
             return 1
         added = continuous_noaa.put_24hr_observations(session)
 
-        print(f'{datetime.datetime.now().isoformat()}: added {added} observations to db')
+        log(f'added {added} observations to db')
         return True
     except Exception as e:
-        print(f'{datetime.datetime.now().isoformat()}: failed to gather daily observations - {str(e.args)}')
+        log(f'failed to gather daily observations - {str(e.args)}')
         time.sleep(600)
         get_weather_observations(attempt+1)
         return False
@@ -34,7 +41,7 @@ def get_usgs_observations():
 
     csv_files = scrape_usgs_data(start_date=start_date, end_date=end_date)
     for csv_file in csv_files:
-        print("uploading {}...".format(csv_file))
+        log("uploading {}...".format(csv_file))
         upload_data_from_file(csv_file)
 
 
@@ -43,11 +50,11 @@ def compute_predictions(session):
     try:
         arima = Arima()
         repo = Repository(session)
-        repo.clear_predictions()
 
         runs = repo.get_all_runs_as_list()
         for run in runs:
             try:
+                repo.clear_predictions(run.run_id)
                 predictions = arima.arima_model(run.run_id)
 
                 to_add = [
@@ -62,11 +69,14 @@ def compute_predictions(session):
                 ]
 
                 repo.put_predictions(to_add)
-                print(f'{datetime.datetime.now().isoformat()}: predictions for {run.run_id}-{run.run_name} added to db')
+                log(f'predictions for {run.run_id}-{run.run_name} added to db')
+            except SQLAlchemyError as e:
+                log(f'{run.run_id}-{run.run_name} failed - {[str(a) for a in e.args]}')
+                session.rollback()
             except Exception as e:
-                print(f'{datetime.datetime.now().isoformat()}: predictions for {run.run_id}-{run.run_name} failed')
+                log(f'predictions for {run.run_id}-{run.run_name} failed - {[str(a) for a in e.args]}')
     except Exception as e:
-        print(f'{datetime.datetime.now().isoformat()}: failed to compute daily predictions- {str(e.args)}')
+        log(f'failed to compute daily predictions - {str(e.args)}')
         return False
 
 
@@ -74,8 +84,8 @@ def daily_run():
     context = Context(settings.DATABASE)
     session = context.Session()
 
-    #get_weather_observations(session)
-    #get_usgs_observations()
+    get_weather_observations(session)
+    get_usgs_observations()
     compute_predictions(session)
 
     session.close()
