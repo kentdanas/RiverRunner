@@ -62,6 +62,7 @@ def compute_predictions(session):
         runs = repo.get_all_runs_as_list()
         for run in runs:
             try:
+                repo.clear_predictions(run.run_id)
                 predictions = arima.arima_model(run.run_id)
 
                 to_add = [
@@ -75,7 +76,6 @@ def compute_predictions(session):
                     for p, d in zip(predictions.values, predictions.index.values)
                 ]
 
-                repo.clear_predictions(run.run_id)
                 repo.put_predictions(to_add)
                 log(f'predictions for {run.run_id}-{run.run_name} added to db')
 
