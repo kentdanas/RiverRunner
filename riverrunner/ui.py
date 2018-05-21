@@ -116,7 +116,7 @@ def update_timeseries(value=599, pl=None):
         )
     )
 
-    predictions = go.Scatter(
+    predicted = go.Scatter(
         x=predictions['predicted']['dates'],
         y=predictions['predicted']['values'],
         line=dict(
@@ -160,7 +160,7 @@ def update_timeseries(value=599, pl=None):
                             }
                        ])
 
-    fig = go.Figure(data=[prediction_plot, max_line, min_line], layout=layout)
+    fig = go.Figure(data=[observed, predicted, max_line, min_line], layout=layout)
     return fig
 
 
