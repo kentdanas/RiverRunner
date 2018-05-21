@@ -205,7 +205,7 @@ class Repository:
 
         if len(predictions) > 0:
             return {
-                'dates':  [to_unix_time(p.timestamp) for p in predictions],
+                'dates':  [datetime.datetime(p.timestamp) for p in predictions],
                 'values': [p.fr for p in predictions],
                 'max_fr': run.max_level,
                 'min_fr': run.min_level
