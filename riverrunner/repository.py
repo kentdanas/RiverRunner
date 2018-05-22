@@ -42,17 +42,11 @@ class Repository:
             DataFrame: containing all runs
         """
 
-            return True
-        except Exception as e:
-            print([str(a) for a in e.args])
-            self.__connection.rollback()
-            raise
+        runs = pd.DataFrame([r.dict for r in self.__session.query(RiverRun).all()])
+        return runs
 
-    def put_measurements_from_list(self, measurements):
-        """add a list of measurements to the database
-
-        Args
-            measurements [Measurement]: list of measurements to put in the db
+    def get_all_runs_as_list(self):
+        """returns all runs as select list
 
         Returns
             [{'label', 'value'}]: list of select options for drop down
@@ -181,68 +175,6 @@ class Repository:
 
         df = pd.DataFrame([m.dict for m in measurements])
         return df
-
-    def get_predictions(self, run_id):
-        """get current predictions for run
-
-        Args:
-            run_id (int): run id
-
-        Returns:
-            {
-                'dates': [DateTime],
-                'values': [float],
-                'max_fr': float,
-                'min_fr: float
-            }: dictionary containing necessary values for plotting
-        """
-        # make sure run exists
-        run = self.get_run(run_id)
-
-        # get the predictions
-        predictions = self.__session.query(Prediction).filter(
-            Prediction.run_id == run_id
-        ).all()
-
-        today = datetime.datetime.today()
-        if len(predictions) > 0:
-            return {
-                'observed': {
-                    'dates': [p.timestamp for p in predictions if p.timestamp < today],
-                    'values': [p.fr for p in predictions if p.timestamp < today]
-                },
-                'predicted': {
-                    'dates': [p.timestamp for p in predictions if p.timestamp >= today],
-                    'values': [p.fr for p in predictions if p.timestamp >= today]
-                },
-                'max_fr': run.max_level,
-                'min_fr': run.min_level
-            }
-        else:
-            stations = self.__session.query(Station).all()
-
-        stations = [s.dict for s in stations]
-        return pd.DataFrame(stations)
-
-    def put_station_river_distances(self, strd):
-        """put station river distance objects in the db
-
-        Args:
-            strd ([StationRiverDistance]): list of StationRiverDistances to add
-        """
-        if not type(strd) is list:
-            strd = [strd]
-
-        try:
-            self.__session.add_all(strd)
-            self.__session.commit()
-
-            return True
-        except Exception as e:
-            self.__session.rollback()
-
-            return False
-            return None
 
     def get_run(self, run_id):
         """retrieve a single run
