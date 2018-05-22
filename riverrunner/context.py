@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine
+import datetime
+from sqlalchemy import create_engine, select
 from sqlalchemy.engine.url import URL
 from sqlalchemy import Column, Integer, String, Float, DateTime, Index, ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import relationship, sessionmaker
@@ -158,6 +159,18 @@ class Prediction(Base):
     fr    = Column(Float)
     fr_ub = Column(Float)
 
+    @hybrid_property
+    def year(self):
+        return self.timestamp.year
+
+    @hybrid_property
+    def month(self):
+        return self.timestamp.month
+
+    @hybrid_property
+    def day(self):
+        return self.timestamp.day
+
     def __repr__(self):
         return '<Prediction(run_id="%s", datetime="%s")>' % (self.run_id, self.timestamp)
 
@@ -201,6 +214,8 @@ class RiverRun(Base):
     max_level = Column(Integer)
     min_level = Column(Integer)
 
+    predictions = relationship("Prediction", lazy='joined')
+
     put_in_latitude  = Column(Float, nullable=False)
     put_in_longitude = Column(Float, nullable=False)
     put_in_address = relationship(
@@ -241,6 +256,36 @@ class RiverRun(Base):
             'take_out_latitude': self.take_out_latitude,
             'take_out_longitude': self.take_out_longitude
         }
+
+    @hybrid_property
+    def observed_measurements(self):
+        today = datetime.datetime.today()
+        predictions = list(self.predictions)
+
+        return [p for p in predictions if p.timestamp <= today]
+
+    @hybrid_property
+    def predicted_measurements(self):
+        today = datetime.datetime.today()
+        predictions = list(self.predictions)
+
+        return [p for p in predictions if p.timestamp > today]
+
+    @hybrid_property
+    def todays_runability(self):
+        today = datetime.datetime.today()
+        predictions = list(self.predictions)
+
+        td = datetime.timedelta(days=1)
+        t_prediction = [p for p in predictions if today - td < p.timestamp < today + td]
+        if len(t_prediction) == 0 or self.max_level is None or self.min_level is None:
+            return -1.
+        else:
+            p = t_prediction[0]
+
+            midpoint = (self.max_level+self.min_level)/2.
+            den = float(self.max_level-midpoint)
+            return float(abs(p.fr-midpoint)/den) if den != 0 else -1.
 
     @property
     def select_option(self):
