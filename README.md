@@ -1,6 +1,8 @@
+<span style="float: right">
 <a href="http://lkwaninger.ddns.net:8111/viewType.html?buildTypeId=RiverRunner_Build&guest=1">
 <img src="http://lkwaninger.ddns.net:8111/app/rest/builds/buildType:(id:RiverRunner_Build)/statusIcon"/>
 </a>
+</span>
 <img src=https://github.com/kentdanas/RiverRunner/raw/master/doc/logo.png  width="200" height="200" />
 
 # River Runner
