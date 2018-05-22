@@ -129,7 +129,9 @@ class Arima:
         prediction_dates = [measures.index[-2] + datetime.timedelta(days=x) for x in range(0, 7)]
         prediction.index = prediction_dates
         past = measures['flow'][-22:-1]
-        prediction = pd.concat([past, prediction[1:]], axis=0)
+        prediction = pd.concat([past[:-1], prediction], axis=0)
+
+
         return prediction
 
     def get_min_max(self, run_id):
