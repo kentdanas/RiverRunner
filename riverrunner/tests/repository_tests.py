@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
 import psycopg2
-from riverrunner import context
+from riverrunner import context, settings
 from riverrunner.context import Address, Measurement, Metric, RiverRun, Station, StationRiverDistance
 from riverrunner.repository import Repository
 from riverrunner.tests.tcontext import TContext
@@ -30,7 +30,8 @@ class TestRepository(TestCase):
         """
         cls.context = TContext()
         cls.session = cls.context.Session()
-        cls.repo = Repository(session=cls.session)
+        cls.connection = psycopg2.connect(**settings.PSYCOPG_DB_TEST)
+        cls.repo = Repository(session=cls.session, connection=cls.connection)
 
         cls.context.clear_dependency_data(cls.session)
         cls.context.generate_addresses(cls.session)
@@ -43,6 +44,7 @@ class TestRepository(TestCase):
         """
         cls.context.clear_dependency_data(cls.session)
         cls.session.close()
+        cls.connection.close()
 
     def setUp(self):
         """perform before each unittest"""
