@@ -118,22 +118,35 @@ def build_timeseries(value):
     if run.predictions is None:
         return None
 
-    o_dates = [p.timestamp for p in run.observed_measurements]
-    o_values = [p.fr for p in run.observed_measurements]
+    observe = dict(
+        dates=[p.timestamp for p in run.observed_measurements],
+        values=[p.fr for p in run.observed_measurements]
+    )
 
-    p_dates = [p.timestamp for p in run.predicted_measurements]
-    p_values = [p.fr for p in run.predicted_measurements]
+    overlap = dict(
+        dates=observe['dates'][-1:],
+        values=observe['values'][-1:],
+        hoverinfo=['x'],
+        opacity=[0]
+    )
 
-    if len(p_dates) == 0:
+    predict = dict(
+        dates=[p.timestamp for p in run.predicted_measurements],
+        values=[p.fr for p in run.predicted_measurements],
+        hoverinfo=['all' for p in run.predicted_measurements],
+        opacity=[1 for p in run.predicted_measurements]
+    )
+
+    if len(predict['dates']) == 0:
         return go.Figure(data=[go.Scatter()], layout={'title': 'an error has occurred'})
 
-    min_date = np.min(o_dates)
-    max_date = np.max(p_dates)
+    min_date = np.min(observe['dates'])
+    max_date = np.max(predict['dates'])
 
     observed = go.Scatter(
         name='observed',
-        x=o_dates,
-        y=o_values,
+        x=observe['dates'],
+        y=observe['values'],
         line=dict(
             color='#252E75',
             width=3
@@ -142,11 +155,16 @@ def build_timeseries(value):
 
     predicted = go.Scatter(
         name='predicted',
-        x=p_dates,
-        y=p_values,
+        x=overlap['dates'] + predict['dates'],
+        y=overlap['values'] + predict['values'],
+        hoverinfo=overlap['hoverinfo'] + predict['hoverinfo'],
         line=dict(
             color='#C44200',
-            width=3
+            width=3,
+            dash='dash'
+        ),
+        marker=dict(
+            opacity=overlap['opacity'] + predict['opacity']
         )
     )
 
