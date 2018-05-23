@@ -169,6 +169,7 @@ def build_timeseries(value):
     )
 
     max_line = go.Scatter(
+        name='max',
         x=[min_date, max_date],
         y=[run.max_level, run.max_level],
         showlegend=False,
@@ -179,6 +180,7 @@ def build_timeseries(value):
     )
 
     min_line = go.Scatter(
+        name='min',
         x=[min_date, max_date],
         y=[run.min_level, run.min_level],
         showlegend=False,
@@ -190,7 +192,7 @@ def build_timeseries(value):
 
     layout = go.Layout(
         title="Flow Rate",
-        yaxis={'title': 'Flow Rate'},
+        yaxis={'title': 'Flow Rate (cfs)'},
         shapes=[{
             'type': 'rect',
             'xref': 'x',
