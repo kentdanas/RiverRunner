@@ -68,9 +68,9 @@ class Repository:
                 Station.source == source
             ).all()
         else:
-            stations = self.__session.query(Station.dict).all()
+            stations = self.__session.query(Station).all()
 
-        stations = list(map(lambda s: s.dict, stations))
+        stations = [s.dict for s in stations]
         return pd.DataFrame(stations)
 
     def get_measurements(self, run_id, start_date=None, end_date=None, min_distance=0., metric_ids=None):
