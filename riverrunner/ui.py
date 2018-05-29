@@ -48,7 +48,7 @@ def color_scale(x):
         return 'not_recommended'
 
 
-def build_map(value):
+def build_map(value, lat, lon, zoom):
     marker_sets = {'unknown': []}
     for run in runs:
         if run.todays_runability == -2:
@@ -136,11 +136,11 @@ def build_map(value):
             accesstoken=settings.MAPBOX,
             bearing=0,
             center=dict(
-                lat=47,
-                lon=-122
+                lat=lat,
+                lon=lon
             ),
             pitch=0,
-            zoom=7
+            zoom=zoom
         ),
         margin=dict(l=10, r=10, b=0, t=0),
         legend=dict(
@@ -341,7 +341,7 @@ app.layout = html.Div([
     html.Div(id='map_container',
              children=dcc.Graph(
                  id='river_map',
-                 figure=build_map(599),
+                 figure=build_map(599, 47, -122, 7),
                  style={
                      'padding': '5px 20px 5px 20px',
                      'minHeight': '650px',
@@ -369,13 +369,20 @@ def update_timeseries(value=599, marker=None):
 
 @app.callback(Output('river_map', 'figure'), [
                   Input('river_dropdown', 'value'),
-                  Input('river_map', 'clickData')
+                  Input('river_map', 'relayoutData'),
                 ])
-def update_map(value=599, marker=None):
+def update_map(value=599, marker=None, relayoutData=None):
     if not isinstance(value, int):
         return None
 
-    fig = build_map(value)
+    lat, lon, zoom = 47, -122, 7
+    if 'mapbox' in marker.keys():
+        center = marker['mapbox']['center']
+        lat = center['lat']
+        lon = center['lon']
+        zoom = marker['mapbox']['zoom']
+
+    fig = build_map(value, lat, lon, zoom)
     return fig
 
 
@@ -402,4 +409,4 @@ def update_dropdown(marker=None):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host='192.168.80.13', port=8050)
+    app.run_server(debug=True, host='127.0.0.1', port=8050)
