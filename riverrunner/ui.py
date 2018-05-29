@@ -15,6 +15,7 @@ from riverrunner import settings
 
 repo = Repository()
 runs = repo.get_all_runs_as_list()
+runs = [run for run in runs if run.todays_runability != -2]
 options = [r.select_option for r in runs]
 
 app = dash.Dash()
@@ -36,20 +37,27 @@ def color_scale(x):
     if x == -1.:
         return 'unknown'
 
-    elif 0 <= x < .33:
+    elif 0 <= x < .66:
         return 'optimal'
 
-    elif .33 <= x < .66:
+    elif .66 <= x < .99:
         return 'fair'
 
-    elif .66 <= x < .99:
+    else:
         return 'not_recommended'
 
 
-def build_map():
+def build_map(value):
     marker_sets = {'unknown': []}
     for run in runs:
+        if run.todays_runability == -2:
+            continue
+
         rating = color_scale(run.todays_runability)
+
+        if run.run_id == value:
+            marker_sets['selected'] = [(run, rating)]
+            continue
 
         if rating not in marker_sets:
             marker_sets[rating] = []
@@ -60,23 +68,64 @@ def build_map():
             marker_sets['unknown'].append(run)
 
     def build_set(rating, ms):
-        return go.Scattermapbox(
-            name=rating,
-            lat=[run.put_in_latitude for run in ms],
-            lon=[run.put_in_longitude for run in ms],
-            text=[f'{run.run_name}</br></br>rating: {run.class_rating}</br>distance: {run.distance} mile(s)' for run in
-                  ms],
-            ids=[run.run_id for run in ms],
-            mode='markers',
-            marker=dict(
-                size=12,
-                color=color_map[rating],
-                opacity=0.8
-            ),
-            hoverinfo='text'
-        )
+        if rating == 'selected':
+            run, col = ms[0]
+
+            return go.Scattermapbox(
+                name='selected',
+                lat=[run.put_in_latitude],
+                lon=[run.put_in_longitude],
+                text=[f'{run.run_name}</br></br>rating: {run.class_rating}</br>distance: {run.distance} mile(s)'],
+                ids=[run.run_id],
+                mode='markers',
+                marker=dict(
+                    size=24,
+                    color='#AEFF0D',
+                    opacity=0.8,
+                    symbol='circle'
+                ),
+                showlegend=False,
+                hoverinfo='text'
+            )
+        else:
+            return go.Scattermapbox(
+                name=rating,
+                lat=[run.put_in_latitude for run in ms],
+                lon=[run.put_in_longitude for run in ms],
+                text=[f'{run.run_name}</br></br>rating: {run.class_rating}</br>distance: {run.distance} mile(s)' for run in
+                      ms],
+                ids=[run.run_id for run in ms],
+                mode='markers',
+                marker=dict(
+                    size=12,
+                    color=color_map[rating],
+                    opacity=0.8,
+                ),
+                hoverinfo='text'
+            )
 
     data = [build_set(key, value) for key, value in marker_sets.items() if key is not None]
+
+    # add center dot to selected
+    selected = marker_sets['selected']
+    run, rating = selected[0]
+    center_dot = go.Scattermapbox(
+        name='selected',
+        lat=[run.put_in_latitude],
+        lon=[run.put_in_longitude],
+        text=[f'{run.run_name}</br></br>rating: {run.class_rating}</br>distance: {run.distance} mile(s)'],
+        ids=[run.run_id],
+        mode='markers',
+        marker=dict(
+            size=20,
+            color=color_map[rating],
+            opacity=1,
+            symbol='circle'
+        ),
+        showlegend=False,
+        hoverinfo='text'
+    )
+    data.append(center_dot)
 
     layout = go.Layout(
         autosize=True,
@@ -190,23 +239,44 @@ def build_timeseries(value):
             dash='dot')
     )
 
+    mid = (run.max_level + run.min_level) / 2.
+    dif = run.max_level - mid
+    opt_low  = -.66*dif+mid if mid != 0 else 0
+    opt_high =  .66*dif+mid if mid != 0 else 0
+
     layout = go.Layout(
         title="Flow Rate",
         yaxis={'title': 'Flow Rate (cfs)'},
-        shapes=[{
-            'type': 'rect',
-            'xref': 'x',
-            'yref': 'y',
-            'x0': min_date,
-            'y0': run.min_level,
-            'x1': max_date,
-            'y1': run.max_level,
-            'fillcolor': '#d3d3d3',
-            'opacity': 0.2,
-            'line': {
-               'width': 0,
+        shapes=[
+            {
+                'type': 'rect',
+                'xref': 'x',
+                'yref': 'y',
+                'x0': min_date,
+                'y0': run.min_level,
+                'x1': max_date,
+                'y1': run.max_level,
+                'fillcolor': '#d3d3d3',
+                'opacity': 0.2,
+                'line': {
+                   'width': 0,
+                }
+            },
+            {
+                'type': 'rect',
+                'xref': 'x',
+                'yref': 'y',
+                'x0': min_date,
+                'y0': opt_low,
+                'x1': max_date,
+                'y1': opt_high,
+                'fillcolor': color_map['optimal'],
+                'opacity': 0.08,
+                'line': {
+                    'width': 0,
+                }
             }
-        }],
+        ],
         legend=dict(
             traceorder='normal',
             orientation='h',
@@ -270,7 +340,7 @@ app.layout = html.Div([
     html.Div(id='map_container',
              children=dcc.Graph(
                  id='river_map',
-                 figure=build_map(),
+                 figure=build_map(599),
                  style={
                      'padding': '5px 20px 5px 20px',
                      'minHeight': '650px',
@@ -293,6 +363,18 @@ def update_timeseries(value=599, marker=None):
         return None
 
     fig = build_timeseries(value)
+    return fig
+
+
+@app.callback(Output('river_map', 'figure'), [
+                  Input('river_dropdown', 'value'),
+                  Input('river_map', 'clickData')
+                ])
+def update_map(value=599, marker=None):
+    if not isinstance(value, int):
+        return None
+
+    fig = build_map(value)
     return fig
 
 
