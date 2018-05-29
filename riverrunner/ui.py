@@ -17,6 +17,7 @@ repo = Repository()
 runs = repo.get_all_runs_as_list()
 runs = [run for run in runs if run.todays_runability != -2]
 options = [r.select_option for r in runs]
+options.sort(key=lambda r: r['label'])
 
 app = dash.Dash()
 font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
@@ -401,4 +402,4 @@ def update_dropdown(marker=None):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='127.0.0.1')
+    app.run_server(debug=False, host='192.168.80.13', port=8050)
