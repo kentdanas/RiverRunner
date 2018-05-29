@@ -13,7 +13,7 @@ def log(message):
     print(message)
 
     now = datetime.datetime.today()
-    with open(f'riverrunner/data/logs/{now.year}{now.month}{now.day}_log.txt', 'a+') as f:
+    with open(f'data/logs/{now.year}{now.month}{now.day}_log.txt', 'a+') as f:
         f.write(f'{datetime.datetime.now().isoformat()}: {message}\n')
 
 
