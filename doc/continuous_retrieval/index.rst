@@ -5,6 +5,6 @@ Continous Data Retrieval
 .. toctree::
    :maxdepth: 2
 
-.. automodule:: riverrunner.scrape_usgs_data
+.. automodule:: riverrunner.continuous_retrieval
    :members:
    :member-order: bysource
