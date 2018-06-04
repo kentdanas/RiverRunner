@@ -1,4 +1,4 @@
-# River Runner - Whitewater Kayaking Predictions - Design Specification
+# Design Specification
 
 ## Components
 
@@ -71,7 +71,7 @@ For all river runs in Washington, we would like to have time series data for str
 * date_time: <em>timestamp</em> - timestamp when measurement was recorded
 * value: <em>real</em> - recorded measurement
 
-#### Additional schema information
+#### Additional Schema Information
 All data will be gathered and processed according to this specification before being committed for persistence. Persistence will be managed through an RDBMS - PostgresSQL 10.3 - Ubuntu Server 16.04 LTE.
 </br>
 <img src="https://raw.githubusercontent.com/kentdanas/RiverRunner/master/doc/schema.png" width=400 style='display:block; margin-left:auto; margin-right:auto'>
@@ -135,14 +135,14 @@ As part of the process of retrieving historical snowpack data, we retrieve time 
 #### River Metric Data
 <a href='https://waterservices.usgs.gov/rest/IV-Test-Tool.html'>USGS's Instantaneous Values API</a> makes it easy to automate the continuous retrieval of time series data. The only difference between retrieving historical data and continuously retrieving river metric data from USGS is eliminating the creation of an intermediate CSV file and, instead, inserting the JSON data returned from the API directly into the database.
 
-### Web server
+### Web Server
 A simple web server will be required to process user requests. This will be implemented using nodejs running on Ubuntu Server 16.06 LTE.
 
 <b>Web requests</b> will be processed through a single nodejs HTTP endpoint.
 
 <b>Prediction data</b> will be provided on demand and cached by the browser once retrieved. These requests will go through the same HTTP endpoint and provide JSON data as a result.
 
-### Server side predictions
+### Server Side Predictions
 Future river flow rates are predicted using an autoregressive integrated moving average (ARIMA) model generated from historic USGS river flow rate time series data. Temperature and precipitation are included in the models as exogenous predictor variables; snowpack will be included as an exogenous predictor at a later date if deemed useful, but will not be used for the first release. Models are generated using the past four years of historical data up to the current day, and predictions are made for the future seven days.
 
 Exploration of the data was completed using `arima_exploration.py`. The `test_stationarity()` function was used to determine that flow rate is non-stationary on a short timeframe due to annual seasonality but stationary over longer periods of time; since most variation is caused short-term spikes in flow rate, this is averaged out over longer periods. Due to the large difference between the seasonality timeframe (annual) and the prediction timeframe (daily), the best models with the highest probability of convergence resulted from using an ARMA model (no differencing) on several years worth of stationary data for the run. The optimal order of the ARMA model for each run (i.e. p and q parameters) was examined for a few test runs using `plot_autocorrs()` to generate autocorrelation and partial autocorrelation plots for lag order and moving average order respectively. Since this analysis must be done manually, the order of ongoing models is determined using built-in python functions.
@@ -151,11 +151,11 @@ The module `arima.py` is used to build and fit the flow rate models for a given 
 
 Immediately following daily data retrieval, the ARIMA models are recalculated for each run with the results stored in a dataframe for plotting.
 
-### Client side interface
+### Client Side Interface
 A single HTML page will be created matching the mockup described in the functional specifications of this application. The page will store all required javascript and CSS data as the entire application only consists of a single page.
 
 ## Interactions
-### Use case 1: The paddler
+### The Paddler
 The paddler requests to view stream flow predictions for a specific kayaking run. The user has two options for finding a river's flow rate predictions:
 1. User searches for a river by typing the river name in the top search bar. The bar will autopopulate with a drop down to filter run names as the user types. Selecting a run will request a prediction.
 2. User views the runs populated on the map, clicking a point to retrieve predictions.
