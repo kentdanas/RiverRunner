@@ -1,6 +1,6 @@
 from .context import *
 from .repository import *
 from .daily import *
-from .data_retrieval import *
+from .continuous_retrieval import *
 
 

@@ -1,6 +1,6 @@
 import datetime as dt
 from riverrunner.context import Address, Metric, RiverRun, Station
-from riverrunner.data_retrieval import *
+from riverrunner.continuous_retrieval import *
 from riverrunner.tests.tcontext import TContext
 from unittest import TestCase
 

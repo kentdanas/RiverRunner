@@ -9,8 +9,8 @@ specified date range
 
 from riverrunner.arima import Arima
 from riverrunner.context import Prediction
-from riverrunner import data_retrieval
-from riverrunner.data_retrieval import *
+from riverrunner import continuous_retrieval
+from riverrunner.continuous_retrieval import *
 from riverrunner.repository import Repository
 from sqlalchemy.exc import SQLAlchemyError
 import time
@@ -51,7 +51,7 @@ def get_weather_observations(session, attempt=0):
     try:
         if attempt >= DARK_SKY_RETRIES:
             return 1
-        added = data_retrieval.put_24hr_observations(session)
+        added = continuous_retrieval.put_24hr_observations(session)
 
         log(f'added {added} observations to db')
         return True
