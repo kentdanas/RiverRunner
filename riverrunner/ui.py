@@ -478,16 +478,3 @@ def run_ui():
 #
 # if __name__ == '__main__':
 #     app.run_server(debug=DEBUG, host=HOST_IP)
-
-
-from multiprocessing import Process
-import time
-while True:
-    server = Process(target=run_ui)
-    try:
-        server.start()
-        time.sleep(5*60)
-        server.terminate()
-    except:
-        server.terminate()
-        continue
