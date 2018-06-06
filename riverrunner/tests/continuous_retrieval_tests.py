@@ -122,3 +122,23 @@ class TestRepository(TestCase):
             Measurement.date_time >= dt.datetime.now() - dt.timedelta(days=24)
         ).all()
         self.assertTrue(len(b) > len(a))
+
+    def test_get_usgs_site_ids(self):
+        """test that USGS station ids get retrieved"""
+        # assert
+        site_ids = get_usgs_site_ids()
+        self.assertTrue(len(site_ids) != 0)
+
+    def test_scrape_usgs_data(self):
+        """test that USGS data gets scraped"""
+        site_id = "12010000"
+        start_date = "2018-01-01"
+
+        # assert
+        out_files = scrape_usgs_data(start_date, start_date, site_ids=[site_id], verbose=False)
+        self.assertTrue(len(out_files) == 1)
+
+        # assert
+        with open(out_files[0], "r") as f:
+            file_content = f.read()
+        self.assertTrue(len(file_content) != 0)

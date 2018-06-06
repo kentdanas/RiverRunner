@@ -238,7 +238,7 @@ def put_24hr_observations(session):
     return added
 
 
-def scrape_usgs_data(start_date, end_date):
+def scrape_usgs_data(start_date, end_date, site_ids=None, verbose=True):
     """ scrape data for all USGS sites and parameters, over the specified date range
 
     Args:
@@ -250,7 +250,7 @@ def scrape_usgs_data(start_date, end_date):
     """
     start_date_file_ext = start_date.replace("-", "")
     end_date_file_ext = end_date.replace("-", "")
-    site_ids = get_usgs_site_ids()
+    site_ids = get_usgs_site_ids() if site_ids is None else site_ids
     param_codes = PARAM_CODES
     out_files = []
     for param_code in param_codes:
@@ -277,7 +277,8 @@ def scrape_usgs_data(start_date, end_date):
                         date_time,
                         value
                     ))
-        print("{}: {}".format(param_code, total_values))
+        if verbose:
+            print("{}: {}".format(param_code, total_values))
     return out_files
 
 
