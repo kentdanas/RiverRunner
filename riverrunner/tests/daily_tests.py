@@ -1,8 +1,5 @@
-import datetime as dt
-import numpy as np
 import os
 import psycopg2
-from riverrunner import  settings
 from riverrunner.daily import *
 from riverrunner.repository import Repository
 from riverrunner.tests.tcontext import TContext
