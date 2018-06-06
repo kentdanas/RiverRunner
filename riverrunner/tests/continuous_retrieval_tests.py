@@ -129,13 +129,16 @@ class TestRepository(TestCase):
         site_ids = get_usgs_site_ids()
         self.assertTrue(len(site_ids) != 0)
 
-    def test_get_usgs_json_data(self):
-        """test a successful request is made to USGS API"""
+    def test_scrape_usgs_data(self):
+        """test that USGS data gets scraped"""
         site_id = "12010000"
         start_date = "2018-01-01"
-        end_date = start_date
-        param_code = PARAM_CODES[0]
 
         # assert
-        date_value_map = get_usgs_json_data(site_id, start_date, end_date, param_code)
-        self.assertTrue(len(date_value_map) != 0)
+        out_files = scrape_usgs_data(start_date, start_date, site_ids=[site_id], verbose=False)
+        self.assertTrue(len(out_files) == 1)
+
+        # assert
+        with open(out_files[0], "r") as f:
+            file_content = f.read()
+        self.assertTrue(len(file_content) != 0)
