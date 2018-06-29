@@ -7,6 +7,7 @@ fill_gaps: the variables day and end can be modified as necessary to retrieve we
 specified date range
 """
 
+import os
 from riverrunner.arima import Arima
 from riverrunner.context import Prediction
 from riverrunner import continuous_retrieval
@@ -144,4 +145,12 @@ def daily_run(db_context):
 
 
 if __name__ == '__main__':
+    # just make sure the path exists, we need reproducibility
+    # for aws auto-scaling
+    if not os.path.exists('data'):
+        os.makedirs('data')
+        os.makedirs('data/logs')
+    elif not os.path.exists('data/logs'):
+        os.makedirs('data/logs')
+
     daily_run(settings.DATABASE)
