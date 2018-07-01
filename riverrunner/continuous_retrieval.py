@@ -346,3 +346,20 @@ if __name__ == "__main__":
         success = upload_data_from_file(csv_file=csv_file, from_csv=from_csv)
 
     fill_noaa_gaps(start_date, end_date)
+
+
+def fill_gaps():
+    start_date = '2018-06-06'
+    end_date   = '2018-06-27'
+
+    csv_files = scrape_usgs_data(start_date=start_date, end_date=end_date)
+    for csv_file in csv_files:
+        print("uploading {}...".format(csv_file))
+        success = upload_data_from_file(csv_file=csv_file, from_csv=True)
+
+    print(f'successfully uploaded usgs measurements ({start_date}-{end_date}) to db') if success else print('failed')
+
+    start_date = dt.datetime(year=2018, month=6, day=6)
+    end_date   = dt.datetime(year=2018, month=6, day=27)
+    fill_noaa_gaps(start_date, end_date)
+

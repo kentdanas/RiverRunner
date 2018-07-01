@@ -116,7 +116,6 @@ def compute_predictions(session):
                 repo.clear_predictions(run.run_id)
                 repo.put_predictions(to_add)
                 log(f'predictions for {run.run_id}-{run.run_name} added to db')
-                return True
 
             except SQLAlchemyError as e:
                 log(f'{run.run_id}-{run.run_name} failed - {[str(a) for a in e.args]}')
@@ -137,8 +136,8 @@ def daily_run(db_context):
     context = Context(db_context)
     session = context.Session()
 
-    get_weather_observations(session)
-    get_usgs_observations()
+    # get_weather_observations(session)
+    # get_usgs_observations()
     compute_predictions(session)
 
     session.close()
