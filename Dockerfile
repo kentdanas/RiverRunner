@@ -7,7 +7,7 @@ RUN apt-get update -y
 RUN apt-get install -y python-setuptools
 
 # Install pip
-RUN easy_install pip
+RUN apt-get install python-pip
 
 # Add and install Python modules
 ADD requirements.txt /src/requirements.txt

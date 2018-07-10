@@ -18,6 +18,7 @@ print(f'working in {os.getcwd()}')
 # enable for application debugging features
 DEBUG = False
 DEPLOYMENT = True
+PORT = 5000
 
 # mapping from river's predicted status to a color code
 COLOR_MAP = dict(
@@ -40,13 +41,9 @@ if DEPLOYMENT:
     server = Flask(__name__)
     application = dash.Dash(server=server)
     run = server.run
-
-    import os
-    PORT = os.environ['PORT']
 else:
     application = dash.Dash()
     run = application.run_server
-    PORT = 5000
 
 font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
 application.css.append_css({
