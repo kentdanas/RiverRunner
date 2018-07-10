@@ -27,8 +27,7 @@ RUN cd /src; pip install -r requirements.txt
 ADD . /src
 
 # Move settings file
-RUN aws s3 cp https://s3.amazonaws.com/elasticbeanstalk-us-east-1-701856502070/RiverRunner/config/settings.py
-/src/riverrunner
+RUN aws s3 cp https://s3.amazonaws.com/elasticbeanstalk-us-east-1-701856502070/RiverRunner/config/settings.py /src/riverrunner
 
 # Expose
 EXPOSE $PORT
