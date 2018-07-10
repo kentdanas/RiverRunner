@@ -12,7 +12,8 @@ RUN conda update -y conda
 
 # Setup environment
 RUN conda create -n rr python=3.6
-CMD ["source", "activate", "rr"]
+ENV PATH=/miniconda/env/rr/bin:${PATH}
+#CMD ["source", "activate", "rr"]
 
 # Install pip
 RUN apt-get install -y python-pip
