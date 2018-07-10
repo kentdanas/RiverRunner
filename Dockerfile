@@ -25,6 +25,9 @@ RUN cd /src; pip install -r requirements.txt
 # Bundle app source
 ADD . /src
 
+# Move settings file
+RUN mv /src/settings.py /src/riverrunner
+
 # Expose
 EXPOSE $PORT
 
