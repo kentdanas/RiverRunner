@@ -7,7 +7,7 @@ RUN apt-get update -y && apt-get install -y curl
 RUN curl -O http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
 RUN bash Miniconda-latest-Linux-x86_64.sh -p /miniconda -b
 RUN rm Miniconda-latest-Linux-x86_64.sh
-RUN export PATH=/miniconda/bin:$PATH
+ENV PATH=$PATH:/miniconda/bin
 RUN conda update -y conda
 
 # Setup environment
