@@ -26,7 +26,7 @@ RUN cd /src; pip install -r requirements.txt
 ADD . /src
 
 # Move settings file
-RUN mv /src/settings.py /src/riverrunner
+RUN mv /home/ec2-user/settings.py /src/riverrunner
 
 # Expose
 EXPOSE $PORT
