@@ -1,7 +1,8 @@
 FROM ubuntu:16.04
 
 # Update packages
-RUN apt-get update -y && apt-get install -y curl && apt-get install -y bzip2
+RUN apt-get update -y && apt-get install -y curl
+RUN apt-get install -y bzip2 && apt-get install -y awscli
 
 # Install Conda
 RUN curl -O https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -26,7 +27,8 @@ RUN cd /src; pip install -r requirements.txt
 ADD . /src
 
 # Move settings file
-RUN mv /home/ec2-user/settings.py /src/riverrunner
+RUN aws s3 cp https://s3.amazonaws.com/elasticbeanstalk-us-east-1-701856502070/RiverRunner/config/settings.py
+/src/riverrunner
 
 # Expose
 EXPOSE $PORT
