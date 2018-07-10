@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 
 # Update packages
-RUN apt-get update -y && apt-get install -y curl
+RUN apt-get update -y && apt-get install -y curl && apt-get install bzip2
 
 # Install Conda
 RUN curl -O https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
