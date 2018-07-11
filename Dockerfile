@@ -28,7 +28,7 @@ ADD . /src
 # Move settings file
 ENV AWS_ACCESS_KEY_ID=$AWSEBS_ID
 ENV AWS_SECRET_ACCESS_KEY=$AWSEBS_KEY
-CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunner/config/settings.py /src/riverrunner
+CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /src/riverrunner
 
 # Expose
 EXPOSE 5000
