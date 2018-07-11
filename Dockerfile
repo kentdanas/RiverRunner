@@ -19,16 +19,16 @@ ENV PATH=/miniconda/envs/rr/bin:${PATH}
 RUN apt-get install -y python-pip
 
 # Add and install Python modules
-ADD requirements.txt /src/requirements.txt
-RUN cd /src; pip install -r requirements.txt
+ADD requirements.txt /var/app/requirements.txt
+RUN cd /var/app; pip install -r requirements.txt
 
 # Bundle app source
-ADD . /src
+ADD . /var/app
 
 # Move settings file
 ENV AWS_ACCESS_KEY_ID=$AWSEBS_ID
 ENV AWS_SECRET_ACCESS_KEY=$AWSEBS_KEY
-CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /src/riverrunner
+CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /var/app/riverrunner
 
 # Expose
 EXPOSE 8000
