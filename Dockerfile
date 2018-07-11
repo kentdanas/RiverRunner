@@ -31,7 +31,7 @@ ENV AWS_SECRET_ACCESS_KEY=$AWSEBS_KEY
 CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunner/config/settings.py /src/riverrunner
 
 # Expose
-EXPOSE $PORT
+EXPOSE 5000
 
 # Run
 CMD ["python", "/src/application.py"]
