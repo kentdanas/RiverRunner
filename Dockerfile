@@ -24,9 +24,10 @@ RUN cd /src; pip install -r requirements.txt
 
 # Bundle app source
 ADD . /src
+ADD /home/ec2-user/settings.py /src/riverrunner/settings.py
 
 # Copy application settings file from S3
-CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /src/riverrunner/settings.py
+# MD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /src/riverrunner/settings.py
 
 # Expose
 EXPOSE 5000
