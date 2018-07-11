@@ -14,7 +14,6 @@ RUN conda update -y conda
 # Setup environment
 RUN conda create -n rr python=3.6
 ENV PATH=/miniconda/envs/rr/bin:${PATH}
-#CMD ["source", "activate", "rr"]
 
 # Install pip
 RUN apt-get install -y python-pip
@@ -27,6 +26,8 @@ RUN cd /src; pip install -r requirements.txt
 ADD . /src
 
 # Move settings file
+ENV AWS_ACCESS_KEY_ID=$AWSEBS_ID
+ENV AWS_SECRET_ACCESS_KEY=$AWSEBS_KEY
 RUN aws s3 cp https://s3.amazonaws.com/elasticbeanstalk-us-east-1-701856502070/RiverRunner/config/settings.py /src/riverrunner
 
 # Expose
