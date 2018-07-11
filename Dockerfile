@@ -34,4 +34,4 @@ CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/s
 EXPOSE 5000
 
 # Run
-CMD ["python", "/src/application.py"]
+CMD ["python", "/var/app/application.py"]
