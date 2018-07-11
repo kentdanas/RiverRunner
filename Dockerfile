@@ -19,11 +19,11 @@ ENV PATH=/miniconda/envs/rr/bin:${PATH}
 RUN apt-get install -y python-pip
 
 # Add and install Python modules
-ADD requirements.txt /src/requirements.txt
-RUN cd /src; pip install -r requirements.txt
+ADD requirements.txt .
+RUN pip install -r requirements.txt
 
 # Bundle app source
-ADD . /src
+ADD . /var/app
 
 # Move settings file
 ENV AWS_ACCESS_KEY_ID=$AWSEBS_ID
@@ -34,4 +34,4 @@ CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/s
 EXPOSE 5000
 
 # Run
-CMD ["python", "/src/application.py"]
+CMD ["python", "/var/app/application.py"]
