@@ -17,7 +17,7 @@ print(f'working in {os.getcwd()}')
 
 # enable for application debugging features
 DEBUG = False
-DEPLOYMENT = False
+DEPLOYMENT = True
 PORT = 5000
 
 # mapping from river's predicted status to a color code
@@ -484,4 +484,4 @@ def update_dropdown(marker=None):
             )
 
 
-run(debug=DEBUG, port=PORT)
+run(debug=DEBUG)
