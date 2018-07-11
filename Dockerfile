@@ -19,8 +19,8 @@ ENV PATH=/miniconda/envs/rr/bin:${PATH}
 RUN apt-get install -y python-pip
 
 # Add and install Python modules
-ADD requirements.txt /var/app
-RUN cd /var/app; pip install -r requirements.txt
+ADD requirements.txt /src/requirements.txt
+RUN cd /src; pip install -r requirements.txt
 
 # Bundle app source
 ADD . /src
