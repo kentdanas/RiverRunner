@@ -25,6 +25,13 @@ RUN cd /src; pip install -r requirements.txt
 # Bundle app source
 ADD . /src
 
+# Add AWS credentials
+# ENV AWS_ACCESS_KEY_ID=$AWSEBS_ID
+# ENV AWS_SECRET_ACCESS_KEY=$AWSEBS_KEY
+
+# Copy application settings file from S3
+CMD aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /src/riverrunner
+
 # Expose
 EXPOSE 5000
 
