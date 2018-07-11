@@ -8,11 +8,12 @@ import dash_core_components as dcc
 import dash_html_components as html
 from flask import Flask
 import numpy as np
+import os
 import plotly.graph_objs as go
 from riverrunner.repository import Repository
 from riverrunner import settings
 
-import os
+
 print(f'working in {os.getcwd()}')
 
 # enable for application debugging features

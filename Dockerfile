@@ -24,10 +24,17 @@ RUN cd /src; pip install -r requirements.txt
 
 # Bundle app source
 ADD . /src
-ADD /var/app/settings.py /src/riverrunner/settings.py
 
-# Copy application settings file from S3
-# RUN aws s3 cp s3://elasticbeanstalk-us-east-1-701856502070/RiverRunners/config/settings.py /src/riverrunner/settings.py
+# Set environment variables
+ENV GEOLOCATION_API_KEY=$GEOLOCATION_API_KEY
+ENV DARK_SKY_KEY=$DARK_SKY_KEY
+ENV MAPBOX_KEY=$MAPBOX_KEY
+ENV DB_DRIVER=$DB_DRIVER
+ENV DB_HOST=$DB_HOST
+ENV DB_MAIN=$DB_MAIN
+ENV DB_PASS=$DB_PASS
+ENV DB_PORT=$DB_PORT
+ENV DB_USER=$DB_USER
 
 # Expose
 EXPOSE 5000
