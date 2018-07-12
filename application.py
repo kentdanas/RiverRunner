@@ -19,7 +19,7 @@ print(f'working in {os.getcwd()}')
 # enable for application debugging features
 DEBUG = False
 DEPLOYMENT = True
-PORT = 80
+PORT = 5000
 
 # mapping from river's predicted status to a color code
 COLOR_MAP = dict(
