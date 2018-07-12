@@ -173,7 +173,7 @@ def build_map(value, lat, lon, zoom):
         height=550,
         hovermode='closest',
         mapbox=dict(
-            accesstoken=settings.MAPBOX,
+            accesstoken=settings.MAPBOX_KEY,
             bearing=0,
             center=dict(
                 lat=lat,
