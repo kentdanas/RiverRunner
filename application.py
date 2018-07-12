@@ -34,6 +34,8 @@ runs = repo.get_all_runs_as_list()
 runs = [run for run in runs if run.todays_runability != -2]
 options = sorted([r.select_option for r in runs], key=lambda r: r['label'])
 
+print(f'loaded {len(runs)} runs')
+
 # set a default run to display
 default_value = int(np.random.choice([o['value'] for o in options], 1)[0])
 
