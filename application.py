@@ -48,8 +48,10 @@ default_value = int(np.random.choice([o['value'] for o in options], 1)[0])
 if DEPLOYMENT:
     server = Flask(__name__)
     app = dash.Dash(server=server)
+    application = server
 else:
     app = dash.Dash()
+    application = app.server
 
 font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
 app.css.append_css({
