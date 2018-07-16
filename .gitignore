@@ -1,13 +1,13 @@
 .idea/
 riverrunner/data/
 *.csv
-
+.DS_Store
 __pycache__
-client_secrets.json
-
 *.cache/
 
-.DS_Store
+
+secrets.py
+
 
 # Elastic Beanstalk Files
 .ebextensions/*

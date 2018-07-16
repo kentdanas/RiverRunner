@@ -29,6 +29,7 @@ COLOR_MAP = dict(
     not_recommended='#A63617'
 )
 
+# get all runs from database
 repo = Repository()
 runs = repo.get_all_runs_as_list()
 runs = [run for run in runs if run.todays_runability != -2]
@@ -487,4 +488,5 @@ def update_dropdown(marker=None):
             )
 
 
-run(debug=DEBUG, port=PORT)
+if __name__ == '__main__':
+    run(debug=DEBUG, port=PORT)
