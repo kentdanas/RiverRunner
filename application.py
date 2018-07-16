@@ -44,10 +44,8 @@ default_value = int(np.random.choice([o['value'] for o in options], 1)[0])
 if DEPLOYMENT:
     server = Flask(__name__)
     application = dash.Dash(server=server)
-    run = server.run
 else:
     application = dash.Dash()
-    run = application.run_server
 
 font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
 application.css.append_css({
@@ -489,4 +487,4 @@ def update_dropdown(marker=None):
 
 
 if __name__ == '__main__':
-    run(debug=DEBUG, port=PORT)
+    application.run_server(debug=DEBUG, port=PORT)
