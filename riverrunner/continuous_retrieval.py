@@ -320,8 +320,8 @@ def upload_data_from_file(csv_file, from_csv=False):
 
 
 def fill_gaps():
-    # start_date = '2018-07-01'
-    # end_date   = '2018-07-10'
+    # start_date = '2018-07-11'
+    # end_date   = '2018-07-15'
     #
     # csv_files = scrape_usgs_data(start_date=start_date, end_date=end_date)
     # for csv_file in csv_files:
@@ -330,8 +330,8 @@ def fill_gaps():
     #
     # print(f'successfully uploaded usgs measurements ({start_date}-{end_date}) to db') if success else print('failed')
 
-    start_date = dt.datetime(year=2018, month=7, day=2)
-    end_date   = dt.datetime(year=2018, month=7, day=10)
+    start_date = dt.datetime(year=2018, month=7, day=11)
+    end_date   = dt.datetime(year=2018, month=7, day=15)
     fill_noaa_gaps(start_date, end_date)
 
 

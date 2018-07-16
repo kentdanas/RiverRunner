@@ -136,8 +136,8 @@ def daily_run(db_context):
     context = Context(db_context)
     session = context.Session()
 
-    # get_weather_observations(session)
-    # get_usgs_observations()
+    get_weather_observations(session)
+    get_usgs_observations()
     compute_predictions(session)
 
     session.close()
