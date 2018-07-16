@@ -47,12 +47,12 @@ default_value = int(np.random.choice([o['value'] for o in options], 1)[0])
 # create a new Dash app adding custom fonts and CSS
 if DEPLOYMENT:
     server = Flask(__name__)
-    application = dash.Dash(server=server)
+    app = dash.Dash(server=server)
 else:
-    application = dash.Dash()
+    app = dash.Dash()
 
 font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
-application.css.append_css({
+app.css.append_css({
     'external_url': font_url
 })
 
@@ -359,7 +359,7 @@ def build_timeseries(value):
 
 
 # setup the main application layout
-application.layout = html.Div([
+app.layout = html.Div([
     html.Div(
         id='navbar',
         children=[
@@ -416,7 +416,7 @@ application.layout = html.Div([
 )
 
 
-@application.callback(Output('time_series', 'figure'), [
+@app.callback(Output('time_series', 'figure'), [
                   Input('river_dropdown', 'value'),
                   Input('river_map', 'clickData')
                 ])
@@ -439,7 +439,7 @@ def update_timeseries(value=default_value, marker=None):
     return fig
 
 
-@application.callback(Output('river_map', 'figure'), [
+@app.callback(Output('river_map', 'figure'), [
                   Input('river_dropdown', 'value'),
                   Input('river_map', 'relayoutData'),
                 ])
@@ -458,7 +458,7 @@ def update_map(value=default_value, marker=None, relayoutData=None):
     return fig
 
 
-@application.callback(Output('river_selection_container', 'children'), [
+@app.callback(Output('river_selection_container', 'children'), [
                   Input('river_map', 'clickData')
                 ])
 def update_dropdown(marker=None):
@@ -491,4 +491,8 @@ def update_dropdown(marker=None):
 
 
 if __name__ == '__main__':
-    application.run_server(debug=DEBUG, port=PORT)
+    if DEPLOYMENT:
+        application = app.server
+        application.run(debug=DEBUG, port=PORT)
+    else:
+        app.run_server(debug=DEBUG, port=PORT)
