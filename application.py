@@ -6,6 +6,7 @@ import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
+import flask
 from flask import Flask
 import numpy as np
 import os
@@ -24,6 +25,7 @@ log(f'working in {os.getcwd()}')
 DEBUG = False
 DEPLOYMENT = True
 PORT = 8080
+CSS_DIR = os.getcwd()
 
 # mapping from river's predicted status to a color code
 COLOR_MAP = dict(
@@ -52,11 +54,6 @@ if DEPLOYMENT:
 else:
     app = dash.Dash()
     application = app.server
-
-font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
-app.css.append_css({
-    'external_url': font_url
-})
 
 
 def color_scale(x):
@@ -370,13 +367,7 @@ app.layout = html.Div([
                     style={'fontFamily': 'Permanent Marker'}
                     )
         ],
-        style={
-            'width': '100%',
-            'textAlign': 'center',
-            'marginTop': '-10px',
-            'backgroundColor': '#3F4041',
-            'color': '#BDC1C4'
-        }),
+    ),
     html.Div(
         id='river_selection_container',
         children=[
@@ -387,14 +378,6 @@ app.layout = html.Div([
                 multi=False
             )
         ],
-        style={
-            'width': '80%',
-            'padding': 10,
-            'textAlign': 'center',
-            'marginLeft': 'auto',
-            'marginRight': 'auto',
-            'marginTop': '-30px'
-        }
     ),
     html.Div(
         id='ts_container',
@@ -405,17 +388,15 @@ app.layout = html.Div([
              children=dcc.Graph(
                  id='river_map',
                  figure=build_map(default_value, 47, -122, 7),
-                 style={
-                     'padding': '5px 20px 5px 20px',
-                     'minHeight': '650px',
-                     'marginTop': '-10px'
-                }
-             ))
-    ],
-    style={
-        'font-family': ['Montserrat', 'sans-serif']
-    }
+             )
+         )
+    ]
 )
+
+
+@app.server.route('/static/<stylesheet>')
+def serve_stylesheet(stylesheet):
+    return flask.send_from_directory('./static/', stylesheet)
 
 
 @app.callback(Output('time_series', 'figure'), [
@@ -490,6 +471,13 @@ def update_dropdown(marker=None):
                 value=default_value,
                 multi=False
             )
+
+
+font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
+app.css.append_css({
+    'external_url': font_url
+})
+app.css.append_css({"external_url": "/static/main.css"})
 
 
 if __name__ == '__main__':
