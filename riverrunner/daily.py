@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import time
 
 """maximum number of API retries for Dark Sky"""
-DARK_SKY_RETRIES = 10
+DARK_SKY_RETRIES = 1
 
 """wait time in seconds between API call"""
 DARK_SKY_WAIT = 600

@@ -5,9 +5,10 @@ riverrunner/data/
 __pycache__
 *.cache/
 
+daily.py
 
 secrets.py
-
+data/
 
 # Elastic Beanstalk Files
 .ebextensions/*
