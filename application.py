@@ -6,16 +6,26 @@ import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
+import flask
+from flask import Flask
 import numpy as np
+import os
 import plotly.graph_objs as go
 from riverrunner.repository import Repository
 from riverrunner import settings
 
-# IP address for running application
-HOST_IP = '192.168.80.13'
+
+def log(message):
+    print(f'APPLICATION: {message}')
+
+
+log(f'working in {os.getcwd()}')
 
 # enable for application debugging features
 DEBUG = False
+DEPLOYMENT = True
+PORT = 8080
+CSS_DIR = os.getcwd()
 
 # mapping from river's predicted status to a color code
 COLOR_MAP = dict(
@@ -25,18 +35,25 @@ COLOR_MAP = dict(
     not_recommended='#A63617'
 )
 
+# get all runs from database
 repo = Repository()
 runs = repo.get_all_runs_as_list()
 runs = [run for run in runs if run.todays_runability != -2]
-options = [r.select_option for r in runs]
-options.sort(key=lambda r: r['label'])
+options = sorted([r.select_option for r in runs], key=lambda r: r['label'])
+
+log(f'loaded {len(runs)} runs')
+
+# set a default run to display
+default_value = int(np.random.choice([o['value'] for o in options], 1)[0])
 
 # create a new Dash app adding custom fonts and CSS
-app = dash.Dash()
-font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
-app.css.append_css({
-    'external_url': font_url
-})
+if DEPLOYMENT:
+    server = Flask(__name__)
+    app = dash.Dash(server=server)
+    application = server
+else:
+    app = dash.Dash()
+    application = app.server
 
 
 def color_scale(x):
@@ -133,25 +150,26 @@ def build_map(value, lat, lon, zoom):
     data = [build_set(key, value) for key, value in marker_sets.items() if key is not None]
 
     # add center dot to selected
-    selected = marker_sets['selected']
-    run, rating = selected[0]
-    center_dot = go.Scattermapbox(
-        name='selected',
-        lat=[run.put_in_latitude],
-        lon=[run.put_in_longitude],
-        text=[f'{run.run_name}</br></br>rating: {run.class_rating}</br>distance: {run.distance} mile(s)'],
-        ids=[run.run_id],
-        mode='markers',
-        marker=dict(
-            size=20,
-            color=COLOR_MAP[rating],
-            opacity=1,
-            symbol='circle'
-        ),
-        showlegend=False,
-        hoverinfo='text'
-    )
-    data.append(center_dot)
+    if 'selected' in marker_sets.keys():
+        selected = marker_sets['selected']
+        run, rating = selected[0]
+        center_dot = go.Scattermapbox(
+            name='selected',
+            lat=[run.put_in_latitude],
+            lon=[run.put_in_longitude],
+            text=[f'{run.run_name}</br></br>rating: {run.class_rating}</br>distance: {run.distance} mile(s)'],
+            ids=[run.run_id],
+            mode='markers',
+            marker=dict(
+                size=20,
+                color=COLOR_MAP[rating],
+                opacity=1,
+                symbol='circle'
+            ),
+            showlegend=False,
+            hoverinfo='text'
+        )
+        data.append(center_dot)
 
     # create the map layout
     layout = go.Layout(
@@ -159,7 +177,7 @@ def build_map(value, lat, lon, zoom):
         height=550,
         hovermode='closest',
         mapbox=dict(
-            accesstoken=settings.MAPBOX,
+            accesstoken=settings.MAPBOX_KEY,
             bearing=0,
             center=dict(
                 lat=lat,
@@ -349,59 +367,43 @@ app.layout = html.Div([
                     style={'fontFamily': 'Permanent Marker'}
                     )
         ],
-        style={
-            'width': '100%',
-            'textAlign': 'center',
-            'marginTop': '-10px',
-            'backgroundColor': '#3F4041',
-            'color': '#BDC1C4'
-        }),
+    ),
     html.Div(
         id='river_selection_container',
         children=[
             dcc.Dropdown(
                 id='river_dropdown',
                 options=options,
-                value=599,
+                value=default_value,
                 multi=False
             )
         ],
-        style={
-            'width': '80%',
-            'padding': 10,
-            'textAlign': 'center',
-            'marginLeft': 'auto',
-            'marginRight': 'auto',
-            'marginTop': '-30px'
-        }
     ),
     html.Div(
         id='ts_container',
         children=dcc.Graph(id='time_series',
-                           figure=build_timeseries(599)),
+                           figure=build_timeseries(default_value)),
     ),
     html.Div(id='map_container',
              children=dcc.Graph(
                  id='river_map',
-                 figure=build_map(599, 47, -122, 7),
-                 style={
-                     'padding': '5px 20px 5px 20px',
-                     'minHeight': '650px',
-                     'marginTop': '-10px'
-                }
-             ))
-    ],
-    style={
-        'font-family': ['Montserrat', 'sans-serif']
-    }
+                 figure=build_map(default_value, 47, -122, 7),
+             )
+         )
+    ]
 )
+
+
+@app.server.route('/static/<stylesheet>')
+def serve_stylesheet(stylesheet):
+    return flask.send_from_directory('./static/', stylesheet)
 
 
 @app.callback(Output('time_series', 'figure'), [
                   Input('river_dropdown', 'value'),
                   Input('river_map', 'clickData')
                 ])
-def update_timeseries(value=599, marker=None):
+def update_timeseries(value=default_value, marker=None):
     """update the time series
 
     callback is triggered when either the drop-down changes values or a marker
@@ -424,7 +426,7 @@ def update_timeseries(value=599, marker=None):
                   Input('river_dropdown', 'value'),
                   Input('river_map', 'relayoutData'),
                 ])
-def update_map(value=599, marker=None, relayoutData=None):
+def update_map(value=default_value, marker=None, relayoutData=None):
     if not isinstance(value, int):
         return None
 
@@ -466,15 +468,21 @@ def update_dropdown(marker=None):
         return dcc.Dropdown(
                 id='river_dropdown',
                 options=options,
-                value=599,
+                value=default_value,
                 multi=False
             )
 
 
-def run_ui():
-    app.run_server(debug=DEBUG, host=HOST_IP)
-    return True
+font_url = 'https://fonts.googleapis.com/css?family=Montserrat|Permanent+Marker'
+app.css.append_css({
+    'external_url': font_url
+})
+app.css.append_css({"external_url": "/static/main.css"})
 
-#
-# if __name__ == '__main__':
-#     app.run_server(debug=DEBUG, host=HOST_IP)
+
+if __name__ == '__main__':
+    if DEPLOYMENT:
+        application = app.server
+        application.run(debug=DEBUG, port=PORT)
+    else:
+        app.run_server(debug=DEBUG, port=PORT)

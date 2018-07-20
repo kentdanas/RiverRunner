@@ -7,6 +7,7 @@ fill_gaps: the variables day and end can be modified as necessary to retrieve we
 specified date range
 """
 
+import os
 from riverrunner.arima import Arima
 from riverrunner.context import Prediction
 from riverrunner import continuous_retrieval
@@ -16,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import time
 
 """maximum number of API retries for Dark Sky"""
-DARK_SKY_RETRIES = 10
+DARK_SKY_RETRIES = 1
 
 """wait time in seconds between API call"""
 DARK_SKY_WAIT = 600
@@ -115,7 +116,6 @@ def compute_predictions(session):
                 repo.clear_predictions(run.run_id)
                 repo.put_predictions(to_add)
                 log(f'predictions for {run.run_id}-{run.run_name} added to db')
-                return True
 
             except SQLAlchemyError as e:
                 log(f'{run.run_id}-{run.run_name} failed - {[str(a) for a in e.args]}')
@@ -144,4 +144,12 @@ def daily_run(db_context):
 
 
 if __name__ == '__main__':
+    # just make sure the path exists, we need reproducibility
+    # for aws auto-scaling
+    if not os.path.exists('data'):
+        os.makedirs('data')
+        os.makedirs('data/logs')
+    elif not os.path.exists('data/logs'):
+        os.makedirs('data/logs')
+
     daily_run(settings.DATABASE)

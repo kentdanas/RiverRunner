@@ -1,11 +1,17 @@
 .idea/
 riverrunner/data/
 *.csv
-
+.DS_Store
 __pycache__
-settings.py
-client_secrets.json
-
 *.cache/
 
-.DS_Store
+daily.py
+
+secrets.py
+data/
+
+# Elastic Beanstalk Files
+.ebextensions/*
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
