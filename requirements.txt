@@ -2,7 +2,7 @@ plotly
 dash
 teamcity-messages
 Babel==2.5.3
-Jinja2==2.10
+Jinja2==2.11.3
 MarkupSafe==1.0
 Pygments==2.2.0
 SQLAlchemy==1.2.7
