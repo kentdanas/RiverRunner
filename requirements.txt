@@ -1,7 +1,7 @@
 plotly
 dash
 teamcity-messages
-Babel==2.5.3
+Babel==2.9.1
 Jinja2==2.10
 MarkupSafe==1.0
 Pygments==2.2.0
