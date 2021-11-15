@@ -15,7 +15,7 @@ imagesize==1.0.0
 numpy==1.14.3
 packaging==17.1
 pandas==0.22.0
-pip==10.0.1
+pip==21.1
 psycopg2==2.7.4
 pyparsing==2.2.0
 python-dateutil==2.7.3
