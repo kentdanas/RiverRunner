@@ -12,7 +12,7 @@ chardet==3.0.4
 docutils==0.14
 idna==2.6
 imagesize==1.0.0
-numpy==1.14.3
+numpy==1.22.0
 packaging==17.1
 pandas==0.22.0
 pip==10.0.1
